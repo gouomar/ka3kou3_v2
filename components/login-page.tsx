@@ -11,10 +11,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
   const handleLogin = () => {
     setIsLoading(true);
-    // Simulate login delay
-    setTimeout(() => {
-      onLogin();
-    }, 600);
+    // Redirect to /login route
+    window.location.href = '/login';
   };
 
   return (
