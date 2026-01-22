@@ -265,63 +265,53 @@ export default function RoadmapVisualizer({ isVisible, apiProjects = [], onProje
   const remaining = displayProjects.length - completed;
 
   return (
-    <div className={`transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-      <div className="max-w-7xl mx-auto px-6 pb-16">
+    <div className={`transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <div className="max-w-7xl mx-auto px-6 pb-12\">
         {/* Section Header */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-slate-800 mb-1">Mastery Roadmap</h2>
-          <p className="text-slate-500 font-light text-sm">
-            You&apos;ve conquered {completed} project{completed !== 1 ? 's' : ''}. {remaining} more to finish the Common Core.
-          </p>
+        <div className="mb-5">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-lg font-medium text-slate-800\">Projects</h2>
+            <span className="text-slate-400 text-sm\">{completed}/{displayProjects.length} done</span>
+          </div>
         </div>
 
         {/* Status Filter */}
-        <div className="flex gap-2 mb-8 flex-wrap">
+        <div className="flex gap-1 mb-6 flex-wrap\">
           {[
             { key: 'all', label: 'All', count: displayProjects.length },
-            { key: 'completed', label: 'Completed', count: completed, activeColor: 'bg-teal-500 text-white border-teal-500' },
-            { key: 'in-progress', label: 'In Progress', count: inProgress, activeColor: 'bg-sky-500 text-white border-sky-500' },
-            { key: 'failed', label: 'Failed', count: failed, activeColor: 'bg-slate-400 text-white border-slate-400' },
-            { key: 'upcoming', label: 'Upcoming', count: upcoming, activeColor: 'bg-slate-300 text-slate-700 border-slate-300' },
+            { key: 'completed', label: 'Done', count: completed },
+            { key: 'in-progress', label: 'Active', count: inProgress },
+            { key: 'failed', label: 'Failed', count: failed },
+            { key: 'upcoming', label: 'Locked', count: upcoming },
           ].map(filter => (
             <button
               key={filter.key}
               onClick={() => setSelectedStatus(filter.key as any)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
+              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                 selectedStatus === filter.key
-                  ? filter.activeColor || 'bg-slate-800 text-white border-slate-800'
-                  : 'bg-white/60 backdrop-blur-sm text-slate-600 border-slate-200/50 hover:bg-white/80 hover:border-slate-300'
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              {filter.label} <span className="ml-1 opacity-70">({filter.count})</span>
+              {filter.label} ({filter.count})
             </button>
           ))}
         </div>
 
         {/* Projects grouped by Circle */}
-        {projectsByCircle.map((group, groupIndex) => (
-          <div key={group.circle} className="mb-10">
+        {projectsByCircle.map((group) => (
+          <div key={group.circle} className="mb-8">
             {/* Circle Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-white text-sm font-bold">
-                {group.circle}
-              </div>
-              <h3 className="text-lg font-semibold text-slate-700">{group.name}</h3>
-              <div className="flex-1 h-px bg-slate-200" />
-              <span className="text-sm text-slate-400">{group.projects.length} project{group.projects.length !== 1 ? 's' : ''}</span>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Circle {group.circle}</span>
+              <span className="text-xs text-slate-300">·</span>
+              <span className="text-xs text-slate-400">{group.projects.length} projects</span>
             </div>
 
             {/* Project Grid for this Circle */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {group.projects.map((project, index) => (
-                <div
-                  key={project.id}
-                  className="smooth-scale-in"
-                  style={{
-                    animationDelay: `${0.2 + groupIndex * 0.1 + index * 0.05}s`,
-                    opacity: 0,
-                  }}
-                >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {group.projects.map((project) => (
+                <div key={project.id}>
                   {/* Special handling for Python Modules */}
                   {project.id === 'python-modules' ? (
                     <div ref={pythonCardRef} className="relative">

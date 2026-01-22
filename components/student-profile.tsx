@@ -61,10 +61,10 @@ export default function StudentProfile({ isVisible, user, projectStats }: Studen
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
 
   return (
-    <div className={`transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-      <div className="max-w-7xl mx-auto px-6 mb-10">
-        <div className="glass-card rounded-2xl p-6">
-          <div className="flex items-start justify-between mb-5">
+    <div className={`transition-all duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <div className="max-w-7xl mx-auto px-6 mb-8">
+        <div className="bg-white rounded-xl p-5 border border-slate-200">
+          <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-4">
               {/* Profile Image */}
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-700 flex items-center justify-center shadow-md">
@@ -94,29 +94,19 @@ export default function StudentProfile({ isVisible, user, projectStats }: Studen
             <div className="text-right">
               <p className="text-xs text-slate-500 font-light mb-1">Level</p>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-semibold text-slate-800">{level.toFixed(2)}</span>
-                <div className="relative w-28 h-3 bg-slate-200 rounded-full overflow-hidden border border-slate-300/50">
+                <span className="text-lg font-semibold text-slate-800">{level.toFixed(2)}</span>
+                <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full rounded-full relative overflow-hidden"
-                    style={{
-                      width: `${levelProgress}%`,
-                      background: 'linear-gradient(90deg, #14b8a6 0%, #2dd4bf 100%)',
-                    }}
-                  >
-                    <div
-                      className="absolute inset-0 opacity-30"
-                      style={{
-                        backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(255,255,255,0.4) 4px, rgba(255,255,255,0.4) 8px)',
-                      }}
-                    />
-                  </div>
+                    className="h-full bg-teal-500 rounded-full"
+                    style={{ width: `${levelProgress}%` }}
+                  />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Stats Row */}
-          <div className="grid grid-cols-5 gap-4 pt-5 border-t border-slate-100">
+          <div className="grid grid-cols-5 gap-4 pt-4 border-t border-slate-100">
             <div className="text-center">
               <p className="text-xl font-semibold text-teal-600">
                 {projectStats?.completed ?? '-'}

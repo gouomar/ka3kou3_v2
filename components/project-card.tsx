@@ -46,8 +46,8 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
   return (
     <div
       onClick={onClick}
-      className={`glass-card rounded-2xl p-6 transition-all duration-300 cursor-pointer group h-full flex flex-col ${
-        isHovered ? '-translate-y-1' : ''
+      className={`bg-white rounded-xl p-5 border border-slate-200 transition-all duration-200 cursor-pointer group h-full flex flex-col ${
+        isHovered ? 'border-slate-300 shadow-sm' : ''
       }`}
     >
       {/* Header with status */}
@@ -76,16 +76,14 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
       {/* Progress bar for in-progress projects */}
       {project.status === 'in-progress' && roadmapProgress && roadmapProgress.total > 0 && (
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-slate-500 font-light">Roadmap Progress</p>
-            <p className="text-sm font-medium text-slate-700">{roadmapProgress.completed}/{roadmapProgress.total}</p>
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-xs text-slate-500">Progress</p>
+            <p className="text-xs font-medium text-slate-600">{roadmapProgress.completed}/{roadmapProgress.total}</p>
           </div>
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-teal-400 to-sky-500 rounded-full transition-all duration-500"
-              style={{
-                width: `${roadmapProgress.percentage}%`,
-              }}
+              className="h-full bg-teal-500 rounded-full"
+              style={{ width: `${roadmapProgress.percentage}%` }}
             />
           </div>
         </div>

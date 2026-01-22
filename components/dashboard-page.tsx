@@ -118,39 +118,30 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
   }, []);
 
   return (
-    <div className="min-h-screen w-full mesh-gradient overflow-hidden">
-      {/* Subtle mesh gradient overlay */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-sky-100/40 to-teal-100/30 rounded-full filter blur-[100px]" />
-        <div className="absolute bottom-1/4 left-1/6 w-[400px] h-[400px] bg-gradient-to-tr from-teal-100/30 to-cyan-100/20 rounded-full filter blur-[80px]" />
-        <div className="absolute top-1/2 right-1/6 w-[300px] h-[300px] bg-gradient-to-bl from-slate-100/40 to-sky-100/30 rounded-full filter blur-[60px]" />
-      </div>
-
+    <div className="min-h-screen w-full bg-slate-50">
       {/* Main content */}
-      <div className="relative z-10">
+      <div className="relative">
         {/* Header */}
-        <header className={`relative py-8 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          {/* Centered bar */}
-          <div className="flex justify-center">
-            <div className="group bg-slate-950/80 backdrop-blur-md border border-white/10 rounded-full px-8 py-3 flex items-center gap-8 shadow-2xl ring-1 ring-white/5 hover:ring-white/20 transition-all duration-500">
+        <header className={`py-6 transition-all duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+          {/* Simple nav bar */}
+          <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+            <div className="flex items-center gap-6">
               {/* 1337 Logo */}
-              <svg width="76" height="20" viewBox="0 0 76 20" fill="none" className="cursor-default select-none"><path d="M2.8333 17.6623H5.92418V2.33766H2.31816V5.45455H0V1.49012e-07H8.75748V17.6623H11.8484V20H2.8333V17.6623Z" fill="white"></path><path d="M21.3785 17.6623H30.6512V10.9091H22.1513V8.57143H30.6512V2.33766H21.3785V0H33.4845V20H21.3785V17.6623Z" fill="white"></path><path d="M42.2419 17.6623H51.5146V10.9091H43.0147V8.57143H51.5146V2.33766H42.2419V0H54.3479V20H42.2419V17.6623Z" fill="white"></path><path d="M72.6355 2.33766H64.9084V7.27273H62.5902V0H75.2113V20H72.6355V2.33766Z" fill="white"></path></svg>
-              
+              <svg width="60" height="16" viewBox="0 0 76 20" fill="none"><path d="M2.8333 17.6623H5.92418V2.33766H2.31816V5.45455H0V1.49012e-07H8.75748V17.6623H11.8484V20H2.8333V17.6623Z" fill="#1e293b"></path><path d="M21.3785 17.6623H30.6512V10.9091H22.1513V8.57143H30.6512V2.33766H21.3785V0H33.4845V20H21.3785V17.6623Z" fill="#1e293b"></path><path d="M42.2419 17.6623H51.5146V10.9091H43.0147V8.57143H51.5146V2.33766H42.2419V0H54.3479V20H42.2419V17.6623Z" fill="#1e293b"></path><path d="M72.6355 2.33766H64.9084V7.27273H62.5902V0H75.2113V20H72.6355V2.33766Z" fill="#1e293b"></path></svg>
+
               {user && (
-                <span className="text-sm text-slate-400 font-medium">
-                  Welcome, <span className="text-slate-200">{user.displayName}</span>
+                <span className="text-sm text-slate-500">
+                  {user.login}
                 </span>
               )}
             </div>
-          </div>
-          
-          {/* Logout button - top right */}
-          <div className="absolute top-8 right-6">
+
+            {/* Logout */}
             <button
               onClick={onLogout}
-              className="bg-red-500/10 border border-red-500/20 rounded-full px-6 py-2 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-300 font-bold text-xs uppercase tracking-wider"
+              className="text-sm text-slate-500 hover:text-slate-800 transition-colors"
             >
-              Logout
+              Sign out
             </button>
           </div>
         </header>
