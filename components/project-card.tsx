@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { calculateProjectProgress } from './project-roadmap-view';
+
 interface Project {
   id: string;
   name: string;
@@ -18,6 +21,18 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project, isHovered, onClick }: ProjectCardProps) {
+  const [roadmapProgress, setRoadmapProgress] = useState<{ completed: number; total: number; percentage: number } | null>(null);
+
+  // Load roadmap progress for in-progress projects
+  useEffect(() => {
+    if (project.status === 'in-progress') {
+      const progress = calculateProjectProgress(project.id);
+      if (progress.total > 0) {
+        setRoadmapProgress(progress);
+      }
+    }
+  }, [project.id, project.status]);
+
   const statusConfig = {
     completed: { color: 'bg-teal-50 text-teal-700 border border-teal-200/50', icon: '✓', label: 'Completed' },
     'in-progress': { color: 'bg-sky-50 text-sky-700 border border-sky-200/50', icon: '◐', label: 'In Progress' },
@@ -59,17 +74,17 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
       </div>
 
       {/* Progress bar for in-progress projects */}
-      {project.status === 'in-progress' && project.progress && (
+      {project.status === 'in-progress' && roadmapProgress && roadmapProgress.total > 0 && (
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-slate-500 font-light">Progress</p>
-            <p className="text-sm font-medium text-slate-700">{project.progress}%</p>
+            <p className="text-xs text-slate-500 font-light">Roadmap Progress</p>
+            <p className="text-sm font-medium text-slate-700">{roadmapProgress.completed}/{roadmapProgress.total}</p>
           </div>
           <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-teal-500 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-teal-400 to-sky-500 rounded-full transition-all duration-500"
               style={{
-                width: `${project.progress}%`,
+                width: `${roadmapProgress.percentage}%`,
               }}
             />
           </div>
