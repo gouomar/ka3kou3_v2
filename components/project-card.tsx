@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { getProjectProgress } from './project-roadmap-view';
+
 interface Project {
   id: string;
   name: string;
@@ -18,6 +21,15 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project, isHovered, onClick }: ProjectCardProps) {
+  const [roadmapProgress, setRoadmapProgress] = useState<{ completed: number; total: number } | null>(null);
+
+  // Load roadmap progress on mount
+  useEffect(() => {
+    const progress = getProjectProgress(project.id);
+    if (progress.total > 0) {
+      setRoadmapProgress(progress);
+    }
+  }, [project.id]);
   const statusConfig = {
     completed: { color: 'bg-teal-50 text-teal-700 border border-teal-200/50', icon: '✓', label: 'Completed' },
     'in-progress': { color: 'bg-sky-50 text-sky-700 border border-sky-200/50', icon: '◐', label: 'In Progress' },
@@ -70,6 +82,24 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
               className="h-full bg-teal-500 rounded-full transition-all duration-500"
               style={{
                 width: `${project.progress}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Roadmap progress */}
+      {roadmapProgress && roadmapProgress.total > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-xs text-slate-500 font-light">Roadmap</p>
+            <p className="text-xs text-slate-500">{roadmapProgress.completed}/{roadmapProgress.total}</p>
+          </div>
+          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-teal-500 rounded-full transition-all duration-500"
+              style={{
+                width: `${(roadmapProgress.completed / roadmapProgress.total) * 100}%`,
               }}
             />
           </div>
