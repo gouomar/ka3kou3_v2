@@ -1,0 +1,24 @@
+<svg width="160" height="48" viewBox="0 0 160 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 1 -->
+  <path d="M2 6L10 0V6H2Z" fill="white"/>
+  <path d="M6 6H14V42H6V6Z" fill="white"/>
+  <path d="M0 42H20V48H0V42Z" fill="white"/>
+  
+  <!-- 3 (first) -->
+  <path d="M28 0H56V6H28V0Z" fill="white"/>
+  <path d="M50 6H56V20H50V6Z" fill="white"/>
+  <path d="M36 20H56V28H36V20Z" fill="white"/>
+  <path d="M50 28H56V42H50V28Z" fill="white"/>
+  <path d="M28 42H56V48H28V42Z" fill="white"/>
+  
+  <!-- 3 (second) -->
+  <path d="M64 0H92V6H64V0Z" fill="white"/>
+  <path d="M86 6H92V20H86V6Z" fill="white"/>
+  <path d="M72 20H92V28H72V20Z" fill="white"/>
+  <path d="M86 28H92V42H86V28Z" fill="white"/>
+  <path d="M64 42H92V48H64V42Z" fill="white"/>
+  
+  <!-- 7 -->
+  <path d="M100 0H136V6H100V0Z" fill="white"/>
+  <polygon points="130,6 136,6 120,48 114,48" fill="white"/>
+</svg>

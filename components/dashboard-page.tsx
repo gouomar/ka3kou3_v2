@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import RoadmapVisualizer from './roadmap-visualizer';
 import StudentProfile from './student-profile';
 
@@ -102,30 +103,36 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
       {/* Main content */}
       <div className="relative z-10">
         {/* Header */}
-        <header className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-lg">42</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-semibold text-slate-800">CommonCore</h1>
-                <p className="text-sm text-slate-500 font-light">Learning Roadmap</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
+        <header className={`relative py-8 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          {/* Centered bar */}
+          <div className="flex justify-center">
+            <div className="group bg-slate-950/80 backdrop-blur-md border border-white/10 rounded-full px-8 py-3 flex items-center gap-8 shadow-2xl ring-1 ring-white/5 hover:ring-white/20 transition-all duration-500">
+              {/* 1337 Logo */}
+              <Image
+                src="/1337-logo.svg"
+                alt="1337"
+                width={80}
+                height={28}
+                className="cursor-default select-none"
+                priority
+              />
+              
               {user && (
-                <span className="text-sm text-slate-600">
-                  Welcome, <span className="font-medium text-slate-900">{user.firstName}</span>
+                <span className="text-sm text-slate-400 font-medium">
+                  Welcome, <span className="text-slate-200">{user.displayName}</span>
                 </span>
               )}
-              <button
-                onClick={onLogout}
-                className="px-5 py-2 rounded-lg bg-white/60 backdrop-blur-sm border border-slate-200/50 text-slate-600 hover:bg-white/80 hover:text-slate-800 transition-all duration-200 font-medium text-sm"
-              >
-                Logout
-              </button>
             </div>
+          </div>
+          
+          {/* Logout button - top right */}
+          <div className="absolute top-8 right-6">
+            <button
+              onClick={onLogout}
+              className="bg-red-500/10 border border-red-500/20 rounded-full px-6 py-2 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-300 font-bold text-xs uppercase tracking-wider"
+            >
+              Logout
+            </button>
           </div>
         </header>
 

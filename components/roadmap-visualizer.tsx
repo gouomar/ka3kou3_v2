@@ -151,14 +151,17 @@ export default function RoadmapVisualizer({ isVisible, apiProjects = [], onProje
   const inProgress = displayProjects.filter(p => p.status === 'in-progress').length;
   const failed = displayProjects.filter(p => p.status === 'failed').length;
   const upcoming = displayProjects.filter(p => p.status === 'upcoming').length;
+  const remaining = displayProjects.length - completed;
 
   return (
     <div className={`transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
       <div className="max-w-7xl mx-auto px-6 pb-16">
         {/* Section Header */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-slate-800 mb-1">Project Roadmap</h2>
-          <p className="text-slate-500 font-light text-sm">Track your progress through the Common Core curriculum</p>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-1">Mastery Roadmap</h2>
+          <p className="text-slate-500 font-light text-sm">
+            You&apos;ve conquered {completed} project{completed !== 1 ? 's' : ''}. {remaining} more to finish the Common Core.
+          </p>
         </div>
 
         {/* Filter Pills */}
