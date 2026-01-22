@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import RoadmapVisualizer from './roadmap-visualizer';
 import StudentProfile from './student-profile';
@@ -108,14 +107,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
           <div className="flex justify-center">
             <div className="group bg-slate-950/80 backdrop-blur-md border border-white/10 rounded-full px-8 py-3 flex items-center gap-8 shadow-2xl ring-1 ring-white/5 hover:ring-white/20 transition-all duration-500">
               {/* 1337 Logo */}
-              <Image
-                src="/1337-logo.svg"
-                alt="1337"
-                width={80}
-                height={28}
-                className="cursor-default select-none"
-                priority
-              />
+              <svg width="76" height="20" viewBox="0 0 76 20" fill="none" className="cursor-default select-none"><path d="M2.8333 17.6623H5.92418V2.33766H2.31816V5.45455H0V1.49012e-07H8.75748V17.6623H11.8484V20H2.8333V17.6623Z" fill="white"></path><path d="M21.3785 17.6623H30.6512V10.9091H22.1513V8.57143H30.6512V2.33766H21.3785V0H33.4845V20H21.3785V17.6623Z" fill="white"></path><path d="M42.2419 17.6623H51.5146V10.9091H43.0147V8.57143H51.5146V2.33766H42.2419V0H54.3479V20H42.2419V17.6623Z" fill="white"></path><path d="M72.6355 2.33766H64.9084V7.27273H62.5902V0H75.2113V20H72.6355V2.33766Z" fill="white"></path></svg>
               
               {user && (
                 <span className="text-sm text-slate-400 font-medium">

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { curriculum } from '@/lib/curriculum';
+import { useMemo, useState } from 'react';
 import ProjectCard from './project-card';
-import { curriculum, getProjectBySlug } from '@/lib/curriculum';
 
 // API project data from 42 intra
 interface ApiProject {
