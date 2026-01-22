@@ -125,8 +125,39 @@
 }
 
 @layer components {
+  /* Mesh Gradient Background */
+  .mesh-gradient {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 25%, #f0fdfa 50%, #ecfeff 75%, #f5f3ff 100%);
+    position: relative;
+  }
+
+  .mesh-gradient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(147, 197, 253, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(167, 243, 208, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 40% 70%, rgba(196, 181, 253, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* Glassmorphism Cards */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  }
+
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  }
+
   .glassmorphic {
-    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl;
+    @apply bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg;
   }
 
   .glassmorphic-dark {

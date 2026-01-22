@@ -1,138 +1,185 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import ProjectCard from './project-card';
+import { curriculum, getProjectBySlug } from '@/lib/curriculum';
+
+// API project data from 42 intra
+interface ApiProject {
+  id: number;
+  name: string;
+  slug: string;
+  status: string;
+  validated: boolean | null;
+  finalMark: number | null;
+}
 
 interface RoadmapVisualizerProps {
   isVisible: boolean;
+  apiProjects?: ApiProject[];
+  onProjectSelect?: (projectId: string) => void;
 }
 
-interface Project {
+// Display project for the UI
+interface DisplayProject {
   id: string;
   name: string;
   description: string;
-  status: 'completed' | 'in-progress' | 'upcoming';
+  status: 'completed' | 'in-progress' | 'failed' | 'upcoming';
   difficulty: number;
   progress?: number;
   skills: string[];
+  finalMark?: number | null;
+  circle?: number;
 }
 
-const mockProjects: Project[] = [
-  {
-    id: '1',
-    name: 'Libft',
-    description: 'Build your own C library',
-    status: 'completed',
-    difficulty: 2,
-    skills: ['C', 'Memory Management', 'Data Structures'],
-  },
-  {
-    id: '2',
-    name: 'ft_printf',
-    description: 'Recreate the printf function',
-    status: 'completed',
-    difficulty: 3,
-    skills: ['C', 'Variadic Functions', 'Parsing'],
-  },
-  {
-    id: '3',
-    name: 'get_next_line',
-    description: 'Read and return successive lines',
-    status: 'completed',
-    difficulty: 3,
-    skills: ['File I/O', 'Buffer Management', 'C'],
-  },
-  {
-    id: '4',
-    name: 'pipex',
-    description: 'Implement shell pipe functionality',
-    status: 'in-progress',
-    difficulty: 4,
-    progress: 65,
-    skills: ['Processes', 'Pipes', 'Unix'],
-  },
-  {
-    id: '5',
-    name: 'Philosophers',
-    description: 'Solve the dining philosophers problem',
-    status: 'in-progress',
-    difficulty: 4,
-    progress: 40,
-    skills: ['Multithreading', 'Synchronization', 'Concurrency'],
-  },
-  {
-    id: '6',
-    name: 'minishell',
-    description: 'Create a simple shell',
-    status: 'upcoming',
-    difficulty: 5,
-    skills: ['Parsing', 'Process Management', 'Signal Handling'],
-  },
-  {
-    id: '7',
-    name: 'NetPractice',
-    description: 'Master TCP/IP networking',
-    status: 'upcoming',
-    difficulty: 3,
-    skills: ['Networking', 'TCP/IP', 'Routing'],
-  },
-  {
-    id: '8',
-    name: 'CPP Modules',
-    description: 'Learn Object-Oriented Programming',
-    status: 'upcoming',
-    difficulty: 4,
-    skills: ['C++', 'OOP', 'Design Patterns'],
-  },
-  {
-    id: '9',
-    name: 'WebServer',
-    description: 'Build an HTTP server',
-    status: 'upcoming',
-    difficulty: 5,
-    skills: ['HTTP', 'Sockets', 'Concurrency'],
-  },
-];
-
-export default function RoadmapVisualizer({ isVisible }: RoadmapVisualizerProps) {
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'completed' | 'in-progress' | 'upcoming'>('all');
+export default function RoadmapVisualizer({ isVisible, apiProjects = [], onProjectSelect }: RoadmapVisualizerProps) {
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'completed' | 'in-progress' | 'failed' | 'upcoming'>('all');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const filteredProjects = selectedStatus === 'all' 
-    ? mockProjects 
-    : mockProjects.filter(p => p.status === selectedStatus);
+  // Convert API projects to display projects by matching with curriculum
+  const displayProjects = useMemo((): DisplayProject[] => {
+    // Create a map of API projects by slug for quick lookup
+    const apiProjectMap = new Map<string, ApiProject>();
+    apiProjects.forEach(p => {
+      apiProjectMap.set(p.slug, p);
+    });
 
-  const completed = mockProjects.filter(p => p.status === 'completed').length;
-  const inProgress = mockProjects.filter(p => p.status === 'in-progress').length;
-  const upcoming = mockProjects.filter(p => p.status === 'upcoming').length;
+    // Build display projects from curriculum, enriched with API status
+    const projects: DisplayProject[] = [];
+
+    curriculum.forEach(circle => {
+      circle.projects.forEach(curriculumProject => {
+        // Try to find matching API project
+        let matchedApiProject: ApiProject | undefined;
+
+        // Check main slug
+        if (apiProjectMap.has(curriculumProject.slug)) {
+          matchedApiProject = apiProjectMap.get(curriculumProject.slug);
+        }
+
+        // Check alternative slugs
+        if (!matchedApiProject && curriculumProject.altSlugs) {
+          for (const altSlug of curriculumProject.altSlugs) {
+            if (apiProjectMap.has(altSlug)) {
+              matchedApiProject = apiProjectMap.get(altSlug);
+              break;
+            }
+          }
+        }
+
+        // Special handling for Python modules - aggregate status
+        if (curriculumProject.id === 'python-modules') {
+          const pythonModules = apiProjects.filter(p => p.slug.startsWith('python-module-'));
+          const completedModules = pythonModules.filter(p => p.status === 'finished' && p.validated === true);
+          const inProgressModules = pythonModules.filter(p =>
+            p.status === 'in_progress' ||
+            (p.status === 'finished' && p.validated === false)
+          );
+
+          let status: DisplayProject['status'] = 'upcoming';
+          let progress: number | undefined;
+
+          if (pythonModules.length > 0) {
+            if (completedModules.length === curriculumProject.moduleCount) {
+              status = 'completed';
+            } else if (completedModules.length > 0 || inProgressModules.length > 0) {
+              status = 'in-progress';
+              progress = Math.round((completedModules.length / (curriculumProject.moduleCount || 11)) * 100);
+            }
+          }
+
+          projects.push({
+            id: curriculumProject.id,
+            name: curriculumProject.name,
+            description: `${completedModules.length}/${curriculumProject.moduleCount || 11} modules completed`,
+            status,
+            difficulty: curriculumProject.difficulty,
+            skills: curriculumProject.skills,
+            progress,
+            circle: curriculumProject.circle,
+          });
+          return;
+        }
+
+        // Determine status from API data
+        let status: DisplayProject['status'] = 'upcoming';
+        let finalMark: number | null = null;
+
+        if (matchedApiProject) {
+          finalMark = matchedApiProject.finalMark;
+
+          if (matchedApiProject.status === 'finished') {
+            if (matchedApiProject.validated === true) {
+              status = 'completed';
+            } else {
+              status = 'failed';
+            }
+          } else if (['in_progress', 'searching_a_group', 'creating_group', 'waiting_for_correction'].includes(matchedApiProject.status)) {
+            status = 'in-progress';
+          }
+        }
+
+        projects.push({
+          id: curriculumProject.id,
+          name: curriculumProject.name,
+          description: curriculumProject.description,
+          status,
+          difficulty: curriculumProject.difficulty,
+          skills: curriculumProject.skills,
+          finalMark,
+          circle: curriculumProject.circle,
+        });
+      });
+    });
+
+    // Sort by circle, then by status (completed first, then in-progress, then upcoming)
+    const statusOrder = { completed: 0, 'in-progress': 1, failed: 2, upcoming: 3 };
+    return projects.sort((a, b) => {
+      if ((a.circle || 0) !== (b.circle || 0)) {
+        return (a.circle || 0) - (b.circle || 0);
+      }
+      return statusOrder[a.status] - statusOrder[b.status];
+    });
+  }, [apiProjects]);
+
+  const filteredProjects = selectedStatus === 'all'
+    ? displayProjects
+    : displayProjects.filter(p => p.status === selectedStatus);
+
+  const completed = displayProjects.filter(p => p.status === 'completed').length;
+  const inProgress = displayProjects.filter(p => p.status === 'in-progress').length;
+  const failed = displayProjects.filter(p => p.status === 'failed').length;
+  const upcoming = displayProjects.filter(p => p.status === 'upcoming').length;
 
   return (
-    <div className={`transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+    <div className={`transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
       <div className="max-w-7xl mx-auto px-6 pb-16">
         {/* Section Header */}
-        <div className="mb-10">
-          <h2 className="text-3xl font-semibold text-slate-900 mb-2">Learning Roadmap</h2>
-          <p className="text-slate-600 font-light">Your journey through the Common Core curriculum</p>
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-slate-800 mb-1">Project Roadmap</h2>
+          <p className="text-slate-500 font-light text-sm">Track your progress through the Common Core curriculum</p>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex gap-3 mb-10 flex-wrap">
+        <div className="flex gap-2 mb-8 flex-wrap">
           {[
-            { key: 'all', label: 'All Projects', count: mockProjects.length },
-            { key: 'completed', label: 'Completed', count: completed, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-            { key: 'in-progress', label: 'In Progress', count: inProgress, color: 'bg-blue-100 text-blue-700 border-blue-200' },
-            { key: 'upcoming', label: 'Upcoming', count: upcoming, color: 'bg-slate-200 text-slate-700 border-slate-300' },
+            { key: 'all', label: 'All', count: displayProjects.length },
+            { key: 'completed', label: 'Completed', count: completed, activeColor: 'bg-teal-500 text-white border-teal-500' },
+            { key: 'in-progress', label: 'In Progress', count: inProgress, activeColor: 'bg-sky-500 text-white border-sky-500' },
+            { key: 'failed', label: 'Failed', count: failed, activeColor: 'bg-slate-400 text-white border-slate-400' },
+            { key: 'upcoming', label: 'Upcoming', count: upcoming, activeColor: 'bg-slate-300 text-slate-700 border-slate-300' },
           ].map(filter => (
             <button
               key={filter.key}
               onClick={() => setSelectedStatus(filter.key as any)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 border ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
                 selectedStatus === filter.key
-                  ? filter.color || 'bg-slate-900 text-white border-slate-900'
-                  : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                  ? filter.activeColor || 'bg-slate-800 text-white border-slate-800'
+                  : 'bg-white/60 backdrop-blur-sm text-slate-600 border-slate-200/50 hover:bg-white/80 hover:border-slate-300'
               }`}
             >
-              {filter.label} <span className="ml-2 font-semibold">({filter.count})</span>
+              {filter.label} <span className="ml-1 opacity-70">({filter.count})</span>
             </button>
           ))}
         </div>
@@ -155,6 +202,7 @@ export default function RoadmapVisualizer({ isVisible }: RoadmapVisualizerProps)
                 <ProjectCard
                   project={project}
                   isHovered={hoveredId === project.id}
+                  onClick={() => onProjectSelect?.(project.id)}
                 />
               </div>
             </div>
