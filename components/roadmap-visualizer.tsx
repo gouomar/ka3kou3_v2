@@ -187,19 +187,76 @@ export default function RoadmapVisualizer({ isVisible, apiProjects = [], onProje
       });
     });
 
-    // Sort by circle, then by status (completed first, then in-progress, then upcoming)
-    const statusOrder = { completed: 0, 'in-progress': 1, failed: 2, upcoming: 3 };
+    // Sort by status first (in-progress first), then by circle
+    const statusOrder = { 'in-progress': 0, completed: 1, failed: 2, upcoming: 3 };
     return projects.sort((a, b) => {
-      if ((a.circle || 0) !== (b.circle || 0)) {
-        return (a.circle || 0) - (b.circle || 0);
+      // In-progress projects come first
+      if (statusOrder[a.status] !== statusOrder[b.status]) {
+        return statusOrder[a.status] - statusOrder[b.status];
       }
-      return statusOrder[a.status] - statusOrder[b.status];
+      // Then sort by circle
+      return (a.circle || 0) - (b.circle || 0);
     });
   }, [apiProjects]);
 
-  const filteredProjects = selectedStatus === 'all'
-    ? displayProjects
-    : displayProjects.filter(p => p.status === selectedStatus);
+  // Apply status filter only
+  const filteredProjects = useMemo(() => {
+    if (selectedStatus === 'all') {
+      return displayProjects;
+    }
+    return displayProjects.filter(p => p.status === selectedStatus);
+  }, [displayProjects, selectedStatus]);
+
+  // Group projects by circle
+  // Order: 1) Current circle (in-progress), 2) Upcoming circles, 3) Already passed circles
+  const projectsByCircle = useMemo(() => {
+    const groups: { circle: number; name: string; projects: DisplayProject[]; hasInProgress: boolean }[] = [];
+    const circleNames: Record<number, string> = {
+      1: 'Circle 1',
+      2: 'Circle 2',
+      3: 'Circle 3',
+      4: 'Circle 4',
+      5: 'Circle 5',
+      6: 'Circle 6',
+      7: 'Circle 7 (Final)',
+    };
+
+    for (let i = 1; i <= 7; i++) {
+      const circleProjects = filteredProjects.filter(p => p.circle === i);
+      if (circleProjects.length > 0) {
+        const hasInProgress = circleProjects.some(p => p.status === 'in-progress');
+        groups.push({
+          circle: i,
+          name: circleNames[i],
+          projects: circleProjects,
+          hasInProgress,
+        });
+      }
+    }
+
+    // Find the current circle (the one with in-progress projects)
+    const currentCircle = groups.find(g => g.hasInProgress)?.circle || 0;
+
+    // Sort: 1) Current circle first, 2) Upcoming circles (after current), 3) Already passed circles (before current)
+    return groups.sort((a, b) => {
+      const aIsCurrent = a.hasInProgress;
+      const bIsCurrent = b.hasInProgress;
+
+      // Current circle comes first
+      if (aIsCurrent && !bIsCurrent) return -1;
+      if (!aIsCurrent && bIsCurrent) return 1;
+
+      // Both are not current: upcoming circles before passed circles
+      const aIsUpcoming = a.circle > currentCircle;
+      const bIsUpcoming = b.circle > currentCircle;
+
+      if (aIsUpcoming && !bIsUpcoming) return -1; // a is upcoming, b is passed
+      if (!aIsUpcoming && bIsUpcoming) return 1;  // b is upcoming, a is passed
+
+      // Within the same category, sort by circle number
+      return a.circle - b.circle;
+    });
+  }, [filteredProjects]);
 
   const completed = displayProjects.filter(p => p.status === 'completed').length;
   const inProgress = displayProjects.filter(p => p.status === 'in-progress').length;
@@ -218,7 +275,7 @@ export default function RoadmapVisualizer({ isVisible, apiProjects = [], onProje
           </p>
         </div>
 
-        {/* Filter Pills */}
+        {/* Status Filter */}
         <div className="flex gap-2 mb-8 flex-wrap">
           {[
             { key: 'all', label: 'All', count: displayProjects.length },
@@ -241,100 +298,115 @@ export default function RoadmapVisualizer({ isVisible, apiProjects = [], onProje
           ))}
         </div>
 
-        {/* Project Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project, index) => (
-            <div
-              key={project.id}
-              className="smooth-scale-in"
-              style={{
-                animationDelay: `${0.4 + index * 0.08}s`,
-                opacity: 0,
-              }}
-            >
-              {/* Special handling for Python Modules */}
-              {project.id === 'python-modules' ? (
-                <div ref={pythonCardRef} className="relative">
-                  <div
-                    onMouseEnter={() => setHoveredId(project.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                  >
-                    <ProjectCard
-                      project={project}
-                      isHovered={hoveredId === project.id}
-                      onClick={() => setExpandedPythonModules(!expandedPythonModules)}
-                    />
-                  </div>
+        {/* Projects grouped by Circle */}
+        {projectsByCircle.map((group, groupIndex) => (
+          <div key={group.circle} className="mb-10">
+            {/* Circle Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-white text-sm font-bold">
+                {group.circle}
+              </div>
+              <h3 className="text-lg font-semibold text-slate-700">{group.name}</h3>
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-sm text-slate-400">{group.projects.length} project{group.projects.length !== 1 ? 's' : ''}</span>
+            </div>
 
-                  {/* Python Modules Panel - Right Side */}
-                  <div
-                    className={`absolute left-full top-0 ml-3 w-56 z-20 transition-all duration-200 ease-out ${
-                      expandedPythonModules
-                        ? 'opacity-100 translate-x-0'
-                        : 'opacity-0 -translate-x-2 pointer-events-none'
-                    }`}
-                  >
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
-                      {/* Header */}
-                      <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Select Module</p>
+            {/* Project Grid for this Circle */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {group.projects.map((project, index) => (
+                <div
+                  key={project.id}
+                  className="smooth-scale-in"
+                  style={{
+                    animationDelay: `${0.2 + groupIndex * 0.1 + index * 0.05}s`,
+                    opacity: 0,
+                  }}
+                >
+                  {/* Special handling for Python Modules */}
+                  {project.id === 'python-modules' ? (
+                    <div ref={pythonCardRef} className="relative">
+                      <div
+                        onMouseEnter={() => setHoveredId(project.id)}
+                        onMouseLeave={() => setHoveredId(null)}
+                      >
+                        <ProjectCard
+                          project={project}
+                          isHovered={hoveredId === project.id}
+                          onClick={() => setExpandedPythonModules(!expandedPythonModules)}
+                        />
                       </div>
 
-                      {/* Modules List */}
-                      <div className="max-h-[400px] overflow-y-auto scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                        {pythonModulesData.map((module) => {
-                          const statusConfig = {
-                            completed: { bg: 'bg-teal-50', text: 'text-teal-600', dot: 'bg-teal-500', label: 'Completed' },
-                            'in-progress': { bg: 'bg-sky-50', text: 'text-sky-600', dot: 'bg-sky-500', label: 'In Progress' },
-                            failed: { bg: 'bg-red-50', text: 'text-red-500', dot: 'bg-red-500', label: 'Failed' },
-                            upcoming: { bg: 'bg-white', text: 'text-slate-400', dot: 'bg-slate-300', label: 'Upcoming' },
-                          };
-                          const config = statusConfig[module.status];
+                      {/* Python Modules Panel - Left Side */}
+                      <div
+                        className={`absolute right-full top-0 mr-3 w-56 z-20 transition-all duration-200 ease-out ${
+                          expandedPythonModules
+                            ? 'opacity-100 translate-x-0'
+                            : 'opacity-0 translate-x-2 pointer-events-none'
+                        }`}
+                      >
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+                          {/* Header */}
+                          <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Select Module</p>
+                          </div>
 
-                          return (
-                            <button
-                              key={module.id}
-                              onClick={() => {
-                                setExpandedPythonModules(false);
-                                onProjectSelect?.(module.id);
-                              }}
-                              className={`w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-b-0 ${config.bg}`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`w-2 h-2 rounded-full ${config.dot}`} />
-                                <span className="text-sm font-medium text-slate-700">{module.name}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className={`text-xs ${config.text}`}>{config.label}</span>
-                                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                              </div>
-                            </button>
-                          );
-                        })}
+                          {/* Modules List */}
+                          <div className="max-h-[400px] overflow-y-auto scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                            {pythonModulesData.map((module) => {
+                              const statusConfig = {
+                                completed: { bg: 'bg-teal-50', text: 'text-teal-600', dot: 'bg-teal-500', label: 'Completed' },
+                                'in-progress': { bg: 'bg-sky-50', text: 'text-sky-600', dot: 'bg-sky-500', label: 'In Progress' },
+                                failed: { bg: 'bg-red-50', text: 'text-red-500', dot: 'bg-red-500', label: 'Failed' },
+                                upcoming: { bg: 'bg-white', text: 'text-slate-400', dot: 'bg-slate-300', label: 'Upcoming' },
+                              };
+                              const config = statusConfig[module.status];
+
+                              return (
+                                <button
+                                  key={module.id}
+                                  onClick={() => {
+                                    setExpandedPythonModules(false);
+                                    onProjectSelect?.(module.id);
+                                  }}
+                                  className={`w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-b-0 ${config.bg}`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-2 h-2 rounded-full ${config.dot}`} />
+                                    <span className="text-sm font-medium text-slate-700">{module.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-xs ${config.text}`}>{config.label}</span>
+                                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div
+                      onMouseEnter={() => setHoveredId(project.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                    >
+                      <ProjectCard
+                        project={project}
+                        isHovered={hoveredId === project.id}
+                        onClick={() => onProjectSelect?.(project.id)}
+                      />
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div
-                  onMouseEnter={() => setHoveredId(project.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                >
-                  <ProjectCard
-                    project={project}
-                    isHovered={hoveredId === project.id}
-                    onClick={() => onProjectSelect?.(project.id)}
-                  />
-                </div>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
 
         {/* Empty state */}
-        {filteredProjects.length === 0 && (
+        {projectsByCircle.length === 0 && (
           <div className="text-center py-12">
             <p className="text-slate-500 font-light">No projects found in this category.</p>
           </div>
