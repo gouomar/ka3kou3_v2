@@ -93,13 +93,23 @@ export default function StudentProfile({ isVisible, user, projectStats }: Studen
             {/* Level Display */}
             <div className="text-right">
               <p className="text-xs text-slate-500 font-light mb-1">Level</p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className="text-xl font-semibold text-slate-800">{level.toFixed(2)}</span>
-                <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="relative w-28 h-3 bg-slate-200 rounded-full overflow-hidden border border-slate-300/50">
                   <div
-                    className="h-full bg-teal-500 rounded-full transition-all duration-500"
-                    style={{ width: `${levelProgress}%` }}
-                  />
+                    className="h-full rounded-full relative overflow-hidden"
+                    style={{
+                      width: `${levelProgress}%`,
+                      background: 'linear-gradient(90deg, #14b8a6 0%, #2dd4bf 100%)',
+                    }}
+                  >
+                    <div
+                      className="absolute inset-0 opacity-30"
+                      style={{
+                        backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(255,255,255,0.4) 4px, rgba(255,255,255,0.4) 8px)',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

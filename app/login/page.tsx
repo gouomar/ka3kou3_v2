@@ -22,7 +22,7 @@ function LoginContent() {
     <div className="min-h-screen w-full bg-[#fafafa] flex flex-col">
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
-        
+
         {/* 1337 Logo */}
         <div className={`mb-8 transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <svg width="180" height="48" viewBox="0 0 76 20" fill="none">
@@ -96,7 +96,7 @@ function LoginContent() {
       {/* Footer */}
       <div className={`py-8 text-center transition-all duration-700 ease-out delay-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
         <p className="text-[#c4c4c4] text-xs tracking-wide">
-          Built for 1337 students
+          Built by students for the 1337 struggle. Keep coding. Greatness awaits.
         </p>
       </div>
     </div>

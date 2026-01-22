@@ -27,8 +27,26 @@ export async function GET() {
 
     const projectsData = await response.json();
 
+    // Filter out piscine/pool projects - only keep cursus projects
+    // Piscine projects typically have cursus_ids containing piscine cursus (9 for C piscine, etc.)
+    // or have 'piscine' or 'pool' in the project name/slug
+    const filteredData = projectsData.filter((p: any) => {
+      const projectName = (p.project?.name || '').toLowerCase();
+      const projectSlug = (p.project?.slug || '').toLowerCase();
+
+      // Exclude piscine/pool projects
+      const isPiscine = projectName.includes('piscine') ||
+                        projectName.includes('pool') ||
+                        projectSlug.includes('piscine') ||
+                        projectSlug.includes('pool') ||
+                        projectSlug.startsWith('c-piscine') ||
+                        projectSlug.startsWith('piscine-');
+
+      return !isPiscine;
+    });
+
     // Process and categorize projects
-    const projects = projectsData.map((p: any) => ({
+    const projects = filteredData.map((p: any) => ({
       id: p.id,
       name: p.project?.name || 'Unknown',
       slug: p.project?.slug || '',

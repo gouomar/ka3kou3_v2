@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { curriculum } from '@/lib/curriculum';
 import ProjectCard from './project-card';
 
 // API project data from 42 intra
