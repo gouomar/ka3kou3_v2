@@ -941,8 +941,45 @@ export const projectRoadmaps: Record<string, ProjectRoadmap> = {
   }
 };
 
+// Python module names and descriptions
+const pythonModuleInfo: Record<number, { name: string; overview: string }> = {
+  0: { name: 'Starting', overview: 'Introduction to Python basics. Learn about variables, data types, basic I/O operations, and Python syntax fundamentals. Your first steps into Python programming.' },
+  1: { name: 'Array', overview: 'Working with arrays and lists in Python. Learn about list operations, slicing, comprehensions, and array manipulation techniques.' },
+  2: { name: 'DataTable', overview: 'Data manipulation with tables. Introduction to structured data handling, CSV operations, and data organization patterns.' },
+  3: { name: 'OOP', overview: 'Object-Oriented Programming in Python. Master classes, objects, inheritance, polymorphism, and encapsulation concepts.' },
+  4: { name: 'DOD', overview: 'Data-Oriented Design patterns. Learn about decorators, generators, and advanced Python design patterns for efficient code.' },
+  5: { name: 'SQL', overview: 'Database operations with Python. Connect to databases, write SQL queries, and integrate database functionality in your applications.' },
+  6: { name: 'Django', overview: 'Web development with Django framework. Build web applications, understand MVC architecture, and create RESTful APIs.' },
+  7: { name: 'Django Advanced', overview: 'Advanced Django concepts. Authentication, middleware, testing, deployment, and building production-ready applications.' },
+  8: { name: 'Numpy', overview: 'Numerical computing with NumPy. Master array operations, mathematical functions, and scientific computing basics.' },
+  9: { name: 'Pandas', overview: 'Data analysis with Pandas. DataFrame manipulation, data cleaning, and analysis techniques for data science workflows.' },
+  10: { name: 'Machine Learning', overview: 'Introduction to Machine Learning. Supervised and unsupervised learning, model training, and evaluation with scikit-learn.' },
+};
+
+// Generate a roadmap for individual Python modules
+function generatePythonModuleRoadmap(moduleNumber: number): ProjectRoadmap {
+  const info = pythonModuleInfo[moduleNumber] || { name: `Module ${moduleNumber}`, overview: 'Python module content.' };
+
+  return {
+    projectId: `python-module-${moduleNumber}`,
+    projectTitle: `Python ${info.name}`,
+    overview: info.overview,
+    mermaidDiagram: '',
+    nodes: {}
+  };
+}
+
 // Get roadmap by project ID
 export function getRoadmapByProjectId(projectId: string): ProjectRoadmap | undefined {
+  // Check if it's an individual Python module
+  const pythonModuleMatch = projectId.match(/^python-module-(\d+)$/);
+  if (pythonModuleMatch) {
+    const moduleNumber = parseInt(pythonModuleMatch[1], 10);
+    if (moduleNumber >= 0 && moduleNumber <= 10) {
+      return generatePythonModuleRoadmap(moduleNumber);
+    }
+  }
+
   return projectRoadmaps[projectId];
 }
 

@@ -21,7 +21,7 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
   const statusConfig = {
     completed: { color: 'bg-teal-50 text-teal-700 border border-teal-200/50', icon: '✓', label: 'Completed' },
     'in-progress': { color: 'bg-sky-50 text-sky-700 border border-sky-200/50', icon: '◐', label: 'In Progress' },
-    failed: { color: 'bg-slate-100 text-slate-500 border border-slate-200/50', icon: '✗', label: 'Failed' },
+    failed: { color: 'bg-red-50 text-red-600 border border-red-200/50', icon: '✗', label: 'Failed' },
     upcoming: { color: 'bg-white/50 text-slate-400 border border-slate-200/50', icon: '○', label: 'Upcoming' },
   };
 
@@ -51,7 +51,7 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
             <span className="text-xs">{config.label}</span>
           </div>
           {(project.status === 'completed' || project.status === 'failed') && project.finalMark !== undefined && project.finalMark !== null && (
-            <span className={`text-sm font-semibold ${project.status === 'completed' ? 'text-teal-600' : 'text-slate-400'}`}>
+            <span className={`text-sm font-semibold ${project.status === 'completed' ? 'text-teal-600' : 'text-red-500'}`}>
               {project.finalMark}%
             </span>
           )}
@@ -81,16 +81,21 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 font-light">Difficulty</span>
           <div className="flex gap-1">
-            {difficultyStars.map((filled, i) => (
-              <div
-                key={i}
-                className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                  filled
-                    ? 'bg-slate-400'
-                    : 'bg-slate-200'
-                }`}
-              />
-            ))}
+            {difficultyStars.map((filled, i) => {
+              // Color based on difficulty: 1-2 green, 3 orange, 4-5 red
+              const getDifficultyColor = () => {
+                if (!filled) return 'bg-slate-200';
+                if (project.difficulty <= 2) return 'bg-green-500';
+                if (project.difficulty === 3) return 'bg-orange-400';
+                return 'bg-red-500';
+              };
+              return (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-all duration-200 ${getDifficultyColor()}`}
+                />
+              );
+            })}
           </div>
         </div>
       </div>

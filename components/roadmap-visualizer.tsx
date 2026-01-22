@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import ProjectCard from './project-card';
 import { curriculum, getProjectBySlug } from '@/lib/curriculum';
 
@@ -33,9 +33,63 @@ interface DisplayProject {
   circle?: number;
 }
 
+// Python module info
+interface PythonModule {
+  id: string;
+  name: string;
+  number: number;
+  status: 'completed' | 'in-progress' | 'failed' | 'upcoming';
+  finalMark?: number | null;
+}
+
 export default function RoadmapVisualizer({ isVisible, apiProjects = [], onProjectSelect }: RoadmapVisualizerProps) {
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'completed' | 'in-progress' | 'failed' | 'upcoming'>('all');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [expandedPythonModules, setExpandedPythonModules] = useState(false);
+  const pythonCardRef = useRef<HTMLDivElement>(null);
+
+  // Close python modules dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pythonCardRef.current && !pythonCardRef.current.contains(event.target as Node)) {
+        setExpandedPythonModules(false);
+      }
+    };
+    if (expandedPythonModules) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [expandedPythonModules]);
+
+  // Get Python modules status from API
+  const pythonModulesData = useMemo((): PythonModule[] => {
+    const modules: PythonModule[] = [];
+    for (let i = 0; i <= 10; i++) {
+      const slug = `python-module-0${i}`;
+      const apiModule = apiProjects.find(p => p.slug === slug || p.slug === `python-module-${i}`);
+
+      let status: PythonModule['status'] = 'upcoming';
+      let finalMark: number | null = null;
+
+      if (apiModule) {
+        finalMark = apiModule.finalMark;
+        if (apiModule.status === 'finished') {
+          status = apiModule.validated === true ? 'completed' : 'failed';
+        } else if (['in_progress', 'searching_a_group', 'creating_group', 'waiting_for_correction'].includes(apiModule.status)) {
+          status = 'in-progress';
+        }
+      }
+
+      modules.push({
+        id: `python-module-${i}`,
+        name: `Python${i.toString().padStart(2, '0')}`,
+        number: i,
+        status,
+        finalMark,
+      });
+    }
+    return modules;
+  }, [apiProjects]);
 
   // Convert API projects to display projects by matching with curriculum
   const displayProjects = useMemo((): DisplayProject[] => {
@@ -195,16 +249,83 @@ export default function RoadmapVisualizer({ isVisible, apiProjects = [], onProje
                 opacity: 0,
               }}
             >
-              <div
-                onMouseEnter={() => setHoveredId(project.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                <ProjectCard
-                  project={project}
-                  isHovered={hoveredId === project.id}
-                  onClick={() => onProjectSelect?.(project.id)}
-                />
-              </div>
+              {/* Special handling for Python Modules */}
+              {project.id === 'python-modules' ? (
+                <div ref={pythonCardRef} className="relative">
+                  <div
+                    onMouseEnter={() => setHoveredId(project.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                  >
+                    <ProjectCard
+                      project={project}
+                      isHovered={hoveredId === project.id}
+                      onClick={() => setExpandedPythonModules(!expandedPythonModules)}
+                    />
+                  </div>
+
+                  {/* Python Modules Panel - Right Side */}
+                  <div
+                    className={`absolute left-full top-0 ml-3 w-56 z-20 transition-all duration-200 ease-out ${
+                      expandedPythonModules
+                        ? 'opacity-100 translate-x-0'
+                        : 'opacity-0 -translate-x-2 pointer-events-none'
+                    }`}
+                  >
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+                      {/* Header */}
+                      <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Select Module</p>
+                      </div>
+
+                      {/* Modules List */}
+                      <div className="max-h-[400px] overflow-y-auto scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        {pythonModulesData.map((module) => {
+                          const statusConfig = {
+                            completed: { bg: 'bg-teal-50', text: 'text-teal-600', dot: 'bg-teal-500', label: 'Completed' },
+                            'in-progress': { bg: 'bg-sky-50', text: 'text-sky-600', dot: 'bg-sky-500', label: 'In Progress' },
+                            failed: { bg: 'bg-red-50', text: 'text-red-500', dot: 'bg-red-500', label: 'Failed' },
+                            upcoming: { bg: 'bg-white', text: 'text-slate-400', dot: 'bg-slate-300', label: 'Upcoming' },
+                          };
+                          const config = statusConfig[module.status];
+
+                          return (
+                            <button
+                              key={module.id}
+                              onClick={() => {
+                                setExpandedPythonModules(false);
+                                onProjectSelect?.(module.id);
+                              }}
+                              className={`w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-b-0 ${config.bg}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-2 h-2 rounded-full ${config.dot}`} />
+                                <span className="text-sm font-medium text-slate-700">{module.name}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs ${config.text}`}>{config.label}</span>
+                                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onMouseEnter={() => setHoveredId(project.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  <ProjectCard
+                    project={project}
+                    isHovered={hoveredId === project.id}
+                    onClick={() => onProjectSelect?.(project.id)}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
