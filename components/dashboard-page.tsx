@@ -62,6 +62,33 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
   const [apiProjects, setApiProjects] = useState<ApiProject[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
+  // Handle browser back button when project view is open
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.projectId) {
+        setSelectedProjectId(event.state.projectId);
+      } else {
+        setSelectedProjectId(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Function to open project with history management
+  const openProject = (projectId: string) => {
+    window.history.pushState({ projectId }, '', `#project-${projectId}`);
+    setSelectedProjectId(projectId);
+  };
+
+  // Function to close project with history management
+  const closeProject = () => {
+    if (selectedProjectId) {
+      window.history.back();
+    }
+  };
+
   useEffect(() => {
     // Trigger animations after mount
     setIsVisible(true);
@@ -136,7 +163,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
         <RoadmapVisualizer
           isVisible={isVisible}
           apiProjects={apiProjects}
-          onProjectSelect={(projectId) => setSelectedProjectId(projectId)}
+          onProjectSelect={openProject}
         />
       </div>
 
@@ -144,7 +171,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
       {selectedProjectId && (
         <ProjectRoadmapView
           projectId={selectedProjectId}
-          onClose={() => setSelectedProjectId(null)}
+          onClose={closeProject}
         />
       )}
     </div>

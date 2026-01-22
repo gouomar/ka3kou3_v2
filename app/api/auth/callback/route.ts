@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
       path: '/',
+      // No maxAge = session cookie, expires when browser closes
     });
 
     cookieStore.set('user', JSON.stringify({
@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
       path: '/',
+      // No maxAge = session cookie, expires when browser closes
     });
 
     return NextResponse.redirect(new URL('/', request.url));
