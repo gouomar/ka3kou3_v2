@@ -1,78 +1,230 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { getRoadmapByProjectId, type ProjectRoadmap, type RoadmapNode } from '@/lib/roadmaps';
+import { getRoadmapByProjectId, type ProjectRoadmap } from '@/lib/roadmaps';
 
 interface ProjectRoadmapViewProps {
   projectId: string;
   onClose: () => void;
 }
 
-// Define roadmap structure with phases
+// Define roadmap structure with phases and detailed content
+interface RoadmapConcept {
+  id: string;
+  title: string;
+  highlight: string;
+  description: string;
+  codePreview?: string;
+  visual: 'code' | 'diagram' | 'terminal' | 'architecture';
+}
+
 interface RoadmapPhase {
   id: string;
   title: string;
+  highlight: string;
   description: string;
-  icon: string;
-  nodes: {
-    id: string;
-    title: string;
-    description: string;
-    isSubNode?: boolean;
-  }[];
+  concepts: RoadmapConcept[];
 }
 
-// Codexion specific roadmap data
+// Codexion detailed roadmap data - cleaner structure
 const codexionPhases: RoadmapPhase[] = [
   {
     id: 'init',
-    title: 'Initialization',
-    description: 'Set up the foundation for your concurrent system',
-    icon: '🚀',
-    nodes: [
-      { id: 'args', title: 'Argument Parsing', description: 'Validate inputs: integers, positive values, scheduler type' },
-      { id: 'god_struct', title: 'The God Struct', description: 'Central data structure holding all simulation state' },
-      { id: 'mutex_init', title: 'Mutex Setup', description: 'Initialize synchronization primitives for thread safety', isSubNode: true },
-      { id: 'time_init', title: 'Time Primitives', description: 'Precise time tracking using gettimeofday', isSubNode: true },
+    title: 'Building the foundation with',
+    highlight: 'Initialization',
+    description: 'Before any thread comes alive, you need solid groundwork. Parse arguments, set up your data structures, and initialize all synchronization primitives.',
+    concepts: [
+      {
+        id: 'args',
+        title: 'Start with',
+        highlight: 'argument validation',
+        description: 'Parse command line inputs: number of coders, timing values, and scheduler type. Every value must be validated before the simulation begins.',
+        codePreview: `parse_args(argc, argv, &config);
+validate_positive_integers();
+setup_scheduler_type();`,
+        visual: 'terminal',
+      },
+      {
+        id: 'god_struct',
+        title: 'Design your',
+        highlight: 'central data structure',
+        description: 'The God Struct holds everything: coder states, mutex arrays, timing data, and termination flags. Single source of truth for the entire simulation.',
+        codePreview: `typedef struct s_simulation {
+    t_coder *coders;
+    pthread_mutex_t *forks;
+    long start_time;
+    int death_flag;
+} t_simulation;`,
+        visual: 'architecture',
+      },
+      {
+        id: 'mutex',
+        title: 'Initialize all',
+        highlight: 'synchronization primitives',
+        description: 'Every mutex must be properly initialized before spawning threads. One per resource, plus print protection. Check every return value.',
+        codePreview: `pthread_mutex_init(&sim->print_lock, NULL);
+for (int i = 0; i < n; i++)
+    pthread_mutex_init(&forks[i], NULL);`,
+        visual: 'code',
+      },
+      {
+        id: 'time',
+        title: 'Master',
+        highlight: 'precise timing',
+        description: 'Microsecond accuracy matters. Use gettimeofday() for timestamps and implement custom sleep functions for precision that usleep cannot guarantee.',
+        codePreview: `long get_time_ms(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}`,
+        visual: 'code',
+      },
     ]
   },
   {
     id: 'runtime',
-    title: 'Runtime Engine',
-    description: 'The heart of your concurrent simulation',
-    icon: '⚡',
-    nodes: [
-      { id: 'spawn', title: 'Spawn Threads', description: 'Launch N worker threads + 1 monitor thread' },
-      { id: 'monitor', title: 'Watchdog Monitor', description: 'Continuously check for timeout conditions' },
-      { id: 'routine', title: 'Coder Routine', description: 'The main loop: think → eat → sleep → repeat', isSubNode: true },
-      { id: 'refactor', title: 'Refactor Action', description: 'Processing phase before resource request', isSubNode: true },
-      { id: 'request', title: 'Request Resources', description: 'Attempt to acquire shared resources', isSubNode: true },
-      { id: 'debug', title: 'Debug/Sleep', description: 'Rest period with precise timing', isSubNode: true },
+    title: 'Bringing threads to life in the',
+    highlight: 'Runtime Engine',
+    description: 'The heart of concurrency. Spawn threads, monitor for death conditions, and orchestrate the think-eat-sleep cycle with perfect synchronization.',
+    concepts: [
+      {
+        id: 'spawn',
+        title: 'Launch your',
+        highlight: 'concurrent threads',
+        description: 'Create N coder threads plus one monitor. Each thread gets its own identity and runs independently. Consider synchronizing start times.',
+        codePreview: `for (int i = 0; i < n; i++)
+    pthread_create(&threads[i], NULL,
+        coder_routine, &coders[i]);
+pthread_create(&monitor, NULL, watch, sim);`,
+        visual: 'diagram',
+      },
+      {
+        id: 'monitor',
+        title: 'Implement the',
+        highlight: 'watchdog monitor',
+        description: 'A dedicated thread that continuously checks if any coder exceeded their time_to_die. When death is detected, signal all threads to stop.',
+        codePreview: `while (!death_detected) {
+    check_all_coders(sim);
+    usleep(1000);
+}
+set_death_flag(sim);`,
+        visual: 'terminal',
+      },
+      {
+        id: 'routine',
+        title: 'Perfect the',
+        highlight: 'coder lifecycle',
+        description: 'Think → Pick up forks → Eat → Put down forks → Sleep → Repeat. The order of operations and timing precision determines success.',
+        codePreview: `while (alive) {
+    think();
+    take_forks();  // ordered!
+    eat();
+    release_forks();
+    sleep_precise();
+}`,
+        visual: 'diagram',
+      },
+      {
+        id: 'logging',
+        title: 'Thread-safe',
+        highlight: 'action logging',
+        description: 'Every state change must be printed with a timestamp. Lock the print mutex, check death flag, print, unlock. Keep the critical section minimal.',
+        codePreview: `pthread_mutex_lock(&print);
+if (!death_flag)
+    printf("%ld %d %s\\n", time, id, action);
+pthread_mutex_unlock(&print);`,
+        visual: 'terminal',
+      },
     ]
   },
   {
     id: 'scheduler',
-    title: 'The Scheduler',
-    description: 'Arbitrate access and prevent deadlocks',
-    icon: '🎯',
-    nodes: [
-      { id: 'arbiter', title: 'Arbitration Logic', description: 'Central decision making for resource allocation' },
-      { id: 'policy', title: 'Scheduling Policy', description: 'Choose between FIFO or EDF strategies' },
-      { id: 'fifo_q', title: 'FIFO Queue', description: 'First-in-first-out ordering', isSubNode: true },
-      { id: 'heap', title: 'EDF Min-Heap', description: 'Earliest Deadline First with priority queue', isSubNode: true },
-      { id: 'check', title: 'Availability Check', description: 'Verify resources are free before granting', isSubNode: true },
-      { id: 'grant', title: 'Grant Locks', description: 'Safely transfer ownership of resources', isSubNode: true },
+    title: 'Preventing chaos with',
+    highlight: 'Smart Scheduling',
+    description: 'Without proper scheduling, deadlocks and starvation will kill your simulation. Choose a strategy and implement it flawlessly.',
+    concepts: [
+      {
+        id: 'deadlock',
+        title: 'Avoid the deadly',
+        highlight: 'circular wait',
+        description: 'Deadlock occurs when threads form a waiting cycle. Break it by ordering resource acquisition - always pick lower-numbered fork first.',
+        codePreview: `int first = MIN(left, right);
+int second = MAX(left, right);
+lock(first);
+lock(second);`,
+        visual: 'architecture',
+      },
+      {
+        id: 'arbiter',
+        title: 'Design a fair',
+        highlight: 'arbitration system',
+        description: 'The arbiter decides who gets resources and when. Queue requests, track ownership, prevent starvation. Consider condition variables for efficiency.',
+        codePreview: `enqueue_request(coder);
+while (!can_acquire(coder))
+    pthread_cond_wait(&cond, &lock);
+grant_forks(coder);`,
+        visual: 'diagram',
+      },
+      {
+        id: 'fifo',
+        title: 'Simple and fair',
+        highlight: 'FIFO scheduling',
+        description: 'First come, first served. Requests are granted in arrival order. Easy to implement, guarantees no starvation, works well for most cases.',
+        codePreview: `queue_add(request);
+while (queue_head() != me)
+    wait();
+acquire_and_proceed();`,
+        visual: 'code',
+      },
+      {
+        id: 'edf',
+        title: 'Deadline-aware',
+        highlight: 'EDF scheduling',
+        description: 'Earliest Deadline First prioritizes coders closest to death. Use a min-heap ordered by deadline. More complex but can handle edge cases.',
+        codePreview: `deadline = last_meal + time_to_die;
+heap_insert(coder, deadline);
+urgent = heap_extract_min();
+grant_to(urgent);`,
+        visual: 'architecture',
+      },
     ]
   },
   {
     id: 'termination',
-    title: 'Shutdown',
-    description: 'Clean termination and validation',
-    icon: '🏁',
-    nodes: [
-      { id: 'join', title: 'Thread Join', description: 'Wait for all threads to complete' },
-      { id: 'cleanup', title: 'Memory Cleanup', description: 'Free all allocated resources' },
-      { id: 'helgrind', title: 'Race Detection', description: 'Verify zero data races with Valgrind', isSubNode: true },
+    title: 'Clean exit with proper',
+    highlight: 'Shutdown',
+    description: 'Every thread must terminate gracefully. Join all threads, destroy all mutexes, free all memory. Zero leaks, zero races.',
+    concepts: [
+      {
+        id: 'join',
+        title: 'Wait for all',
+        highlight: 'threads to finish',
+        description: 'Call pthread_join on every thread you created. The monitor first (it controls termination), then all coders. Never detach threads.',
+        codePreview: `pthread_join(monitor, NULL);
+for (int i = 0; i < n; i++)
+    pthread_join(coders[i].thread, NULL);`,
+        visual: 'code',
+      },
+      {
+        id: 'cleanup',
+        title: 'Destroy and',
+        highlight: 'free everything',
+        description: 'Destroy mutexes in reverse order of creation. Free all allocated arrays. Run valgrind to verify zero leaks before submission.',
+        codePreview: `for (int i = n - 1; i >= 0; i--)
+    pthread_mutex_destroy(&forks[i]);
+free(coders);
+free(forks);`,
+        visual: 'terminal',
+      },
+      {
+        id: 'helgrind',
+        title: 'Verify with',
+        highlight: 'race detection tools',
+        description: 'Run Helgrind and ThreadSanitizer. Every data race must be fixed. Common culprits: death flag reads, last_meal updates, print output.',
+        codePreview: `$ valgrind --tool=helgrind ./codexion 4 410 200 200
+$ valgrind --leak-check=full ./codexion 4 410 200 200`,
+        visual: 'terminal',
+      },
     ]
   }
 ];
@@ -80,402 +232,295 @@ const codexionPhases: RoadmapPhase[] = [
 export default function ProjectRoadmapView({ projectId, onClose }: ProjectRoadmapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [roadmap, setRoadmap] = useState<ProjectRoadmap | null>(null);
-  const [selectedNode, setSelectedNode] = useState<RoadmapNode | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
-  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [activePhaseIndex, setActivePhaseIndex] = useState(0);
+  const [activeConceptIndex, setActiveConceptIndex] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  const phases = projectId === 'codexion' ? codexionPhases : codexionPhases;
+  const totalConcepts = phases.reduce((sum, phase) => sum + phase.concepts.length, 0);
 
   // Load roadmap data
   useEffect(() => {
     const roadmapData = getRoadmapByProjectId(projectId);
     setRoadmap(roadmapData || null);
-
-    requestAnimationFrame(() => {
-      setIsVisible(true);
-    });
+    requestAnimationFrame(() => setIsVisible(true));
   }, [projectId]);
 
-  // Scroll handler
+  // Scroll handler - calculates which phase/concept is active
   const handleScroll = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
-    setScrollY(container.scrollTop);
-  }, []);
+
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight - container.clientHeight;
+    const progress = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
+    setScrollProgress(progress);
+
+    // Calculate active concept based on scroll position
+    const conceptIndex = Math.floor(progress * totalConcepts);
+
+    let conceptsBefore = 0;
+    for (let i = 0; i < phases.length; i++) {
+      if (conceptIndex < conceptsBefore + phases[i].concepts.length) {
+        setActivePhaseIndex(i);
+        setActiveConceptIndex(conceptIndex - conceptsBefore);
+        break;
+      }
+      conceptsBefore += phases[i].concepts.length;
+    }
+  }, [phases, totalConcepts]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     container.addEventListener('scroll', handleScroll, { passive: true });
     return () => container.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  // Handle escape key
+  // Escape key handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isModalOpen) {
-          setIsModalOpen(false);
-        } else {
-          onClose();
-        }
-      }
+      if (e.key === 'Escape') onClose();
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, onClose]);
-
-  const handleNodeClick = (nodeId: string) => {
-    if (roadmap?.nodes[nodeId]) {
-      setSelectedNode(roadmap.nodes[nodeId]);
-      setIsModalOpen(true);
-    }
-  };
-
-  // Calculate node visibility based on scroll position
-  const getNodeProgress = (phaseIndex: number, nodeIndex: number) => {
-    const section = sectionRefs.current[phaseIndex];
-    if (!section) return 0;
-
-    const sectionTop = section.offsetTop - 200;
-    const nodeOffset = nodeIndex * 60;
-    const progress = (scrollY - sectionTop - nodeOffset) / 150;
-    return Math.max(0, Math.min(1, progress));
-  };
+  }, [onClose]);
 
   if (!roadmap) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
-        <div className="text-center">
-          <p className="text-slate-500">No roadmap available for this project yet.</p>
-          <button
-            onClick={onClose}
-            className="mt-4 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
+        <p className="text-slate-500">No roadmap available yet.</p>
       </div>
     );
   }
 
-  const phases = projectId === 'codexion' ? codexionPhases : codexionPhases;
+  const activePhase = phases[activePhaseIndex];
+  const activeConcept = activePhase?.concepts[activeConceptIndex];
+
+  // Render visual based on type
+  const renderVisual = (concept: RoadmapConcept) => {
+    if (!concept.codePreview) return null;
+
+    return (
+      <div className="w-full h-full flex items-center justify-center p-8">
+        <div className="w-full max-w-lg">
+          {/* Terminal-style code display */}
+          <div className="bg-[#1a1a2e] rounded-2xl overflow-hidden shadow-2xl">
+            {/* Terminal header */}
+            <div className="flex items-center gap-2 px-4 py-3 bg-[#16162a] border-b border-[#2a2a4a]">
+              <div className="w-3 h-3 rounded-full bg-red-500/80" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+              <div className="w-3 h-3 rounded-full bg-green-500/80" />
+              <span className="ml-3 text-xs text-slate-500 font-mono">codexion.c</span>
+            </div>
+            {/* Code content */}
+            <div className="p-6 font-mono text-sm leading-relaxed">
+              <pre className="text-[#a5b4fc] whitespace-pre-wrap">
+                <code>{concept.codePreview}</code>
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-white transition-opacity duration-500 ${
+      className={`fixed inset-0 z-50 overflow-y-auto bg-[#fafafa] transition-opacity duration-500 ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      {/* Header */}
-      <header className="fixed top-0 left-0 z-40 bg-white/90 backdrop-blur-sm border-b border-slate-200" style={{ width: '400px' }}>
-        <div className="px-6 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all duration-200"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div>
-              <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Roadmap</p>
-              <h1 className="text-lg font-bold text-slate-800">{roadmap.projectTitle}</h1>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="pt-20 pb-32">
-        {/* Overview */}
+      {/* Intro Section - Clean hero */}
+      <div className="relative min-h-screen flex items-center justify-center px-6">
         <div
-          className="px-6 py-8 max-w-[380px]"
+          className="text-center max-w-2xl"
           style={{
-            opacity: isVisible ? 1 : 0,
-            transform: isVisible ? 'translateX(0)' : 'translateX(-20px)',
-            transition: 'all 0.6s ease-out',
+            opacity: Math.max(0, 1 - scrollProgress * 8),
+            transform: `translateY(${scrollProgress * 100}px)`,
           }}
         >
-          <p className="text-slate-600 text-sm leading-relaxed">{roadmap.overview}</p>
-        </div>
-
-        {/* Phases with branching animation */}
-        {phases.map((phase, phaseIndex) => (
-          <div
-            key={phase.id}
-            ref={(el) => { sectionRefs.current[phaseIndex] = el; }}
-            className="relative mb-8"
+          {/* Back button */}
+          <button
+            onClick={onClose}
+            className="absolute top-8 left-8 p-3 text-slate-400 hover:text-slate-600 transition-colors"
           >
-            {/* Phase header - Left side */}
-            <div
-              className="sticky top-20 z-10 px-6 py-4"
-              style={{ width: '380px' }}
-            >
-              <div
-                className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"
-                style={{
-                  opacity: getNodeProgress(phaseIndex, -2) > 0 ? 1 : 0.4,
-                  transform: `translateX(${getNodeProgress(phaseIndex, -2) > 0 ? 0 : -10}px)`,
-                  transition: 'all 0.4s ease-out',
-                }}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-2xl">{phase.icon}</span>
-                  <div>
-                    <span className="text-xs text-slate-400 font-medium">Phase {phaseIndex + 1}</span>
-                    <h2 className="text-lg font-bold text-slate-800">{phase.title}</h2>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </button>
+
+          <h1 className="text-5xl md:text-6xl font-medium text-slate-800 tracking-tight mb-8">
+            <span className="text-slate-400">Master</span> {roadmap.projectTitle}
+          </h1>
+          <p className="text-xl text-slate-500 leading-relaxed mb-12">
+            {roadmap.overview}
+          </p>
+          <div className="text-slate-300">
+            <svg className="w-8 h-8 mx-auto animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Tabs Section - Dark themed like Yoda website */}
+      <section className="relative rounded-t-[2rem] bg-[#292929] min-h-screen" style={{ zIndex: 2 }}>
+        <div className="py-16 md:py-24">
+          {/* Scroll height for animation */}
+          <div style={{ height: `${totalConcepts * 100}vh` }}>
+            {/* Sticky container */}
+            <div className="sticky top-0 h-screen">
+              <div className="h-full max-w-7xl mx-auto px-6 md:px-12">
+                <div className="h-full grid grid-cols-1 md:grid-cols-[0.4fr_1fr] gap-6">
+
+                  {/* Left Panel - Text content that changes */}
+                  <div className="bg-[#424242] rounded-2xl p-8 flex flex-col justify-between relative overflow-hidden">
+                    {/* Phase content - stacked, opacity controlled */}
+                    <div className="flex-1 relative">
+                      {phases.map((phase, phaseIdx) => (
+                        <div
+                          key={phase.id}
+                          className="absolute inset-0 flex flex-col justify-center transition-opacity duration-500"
+                          style={{ opacity: activePhaseIndex === phaseIdx ? 1 : 0 }}
+                        >
+                          {/* Concept content within phase */}
+                          {phase.concepts.map((concept, conceptIdx) => (
+                            <div
+                              key={concept.id}
+                              className="absolute inset-0 flex flex-col justify-center transition-all duration-500"
+                              style={{
+                                opacity: activePhaseIndex === phaseIdx && activeConceptIndex === conceptIdx ? 1 : 0,
+                                transform: activePhaseIndex === phaseIdx && activeConceptIndex === conceptIdx
+                                  ? 'translateY(0)'
+                                  : 'translateY(20px)',
+                              }}
+                            >
+                              <h2 className="text-2xl md:text-3xl font-medium text-[#f5f5f5] leading-tight mb-6">
+                                {concept.title} <span className="text-[#61ffc9]">{concept.highlight}</span>
+                              </h2>
+
+                              <div className="w-full h-px bg-[#737373] my-6" />
+
+                              <p className="text-[#a3a3a3] text-base md:text-lg leading-relaxed">
+                                {concept.description}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Phase indicator */}
+                    <div className="mt-8 pt-6 border-t border-[#525252]">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-xs text-[#737373] uppercase tracking-wider">
+                          {activePhase?.title} <span className="text-[#61ffc9]">{activePhase?.highlight}</span>
+                        </span>
+                        <span className="text-xs text-[#737373]">
+                          {Math.round(scrollProgress * 100)}%
+                        </span>
+                      </div>
+                      <div className="h-1 bg-[#525252] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#61ffc9] transition-all duration-300 rounded-full"
+                          style={{ width: `${scrollProgress * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Panel - Visual content */}
+                  <div className="bg-[#424242] rounded-2xl relative overflow-hidden hidden md:block">
+                    {/* Stacked visuals with opacity transitions */}
+                    {phases.map((phase, phaseIdx) =>
+                      phase.concepts.map((concept, conceptIdx) => (
+                        <div
+                          key={`${phase.id}-${concept.id}`}
+                          className="absolute inset-0 transition-all duration-500"
+                          style={{
+                            opacity: activePhaseIndex === phaseIdx && activeConceptIndex === conceptIdx ? 1 : 0,
+                            transform: activePhaseIndex === phaseIdx && activeConceptIndex === conceptIdx
+                              ? 'translateY(0)'
+                              : 'translateY(100%)',
+                          }}
+                        >
+                          {renderVisual(concept)}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
-                <p className="text-sm text-slate-500">{phase.description}</p>
               </div>
             </div>
-
-            {/* Nodes - Branching to the right */}
-            <div className="relative" style={{ minHeight: `${phase.nodes.length * 100 + 50}px` }}>
-              {phase.nodes.map((node, nodeIndex) => {
-                const progress = getNodeProgress(phaseIndex, nodeIndex);
-                const isSubNode = node.isSubNode;
-
-                // Calculate position - branches spread to the right
-                const baseLeft = 380;
-                const extraIndent = isSubNode ? 60 : 0;
-                const topPosition = 20 + nodeIndex * 90;
-
-                return (
-                  <div
-                    key={node.id}
-                    className="absolute"
-                    style={{
-                      left: `${baseLeft + extraIndent}px`,
-                      top: `${topPosition}px`,
-                      width: 'calc(100% - 450px)',
-                      maxWidth: '500px',
-                    }}
-                  >
-                    {/* Branch line from left */}
-                    <svg
-                      className="absolute pointer-events-none"
-                      style={{
-                        left: `-${80 + extraIndent}px`,
-                        top: '24px',
-                        width: `${80 + extraIndent}px`,
-                        height: '2px',
-                        overflow: 'visible',
-                      }}
-                    >
-                      <line
-                        x1="0"
-                        y1="0"
-                        x2={80 + extraIndent}
-                        y2="0"
-                        stroke="#e2e8f0"
-                        strokeWidth="2"
-                        strokeDasharray={80 + extraIndent}
-                        strokeDashoffset={(1 - progress) * (80 + extraIndent)}
-                        style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
-                      />
-                      {/* Dot at the end */}
-                      <circle
-                        cx={80 + extraIndent}
-                        cy="0"
-                        r="4"
-                        fill="#94a3b8"
-                        style={{
-                          opacity: progress,
-                          transform: `scale(${progress})`,
-                          transformOrigin: 'center',
-                          transition: 'all 0.3s ease-out',
-                        }}
-                      />
-                    </svg>
-
-                    {/* Node card */}
-                    <button
-                      onClick={() => handleNodeClick(node.id)}
-                      className={`w-full text-left rounded-xl border transition-all duration-300 ${
-                        isSubNode
-                          ? 'bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200 p-4'
-                          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md p-5'
-                      }`}
-                      style={{
-                        opacity: progress,
-                        transform: `translateX(${(1 - progress) * 40}px)`,
-                        transition: 'all 0.5s ease-out',
-                        pointerEvents: progress > 0.5 ? 'auto' : 'none',
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className={`font-semibold text-slate-800 ${isSubNode ? 'text-sm' : ''}`}>
-                            {node.title}
-                          </h3>
-                          <p className={`text-slate-500 mt-1 ${isSubNode ? 'text-xs' : 'text-sm'}`}>
-                            {node.description}
-                          </p>
-                        </div>
-                        <svg
-                          className="w-4 h-4 text-slate-400 flex-shrink-0 mt-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </button>
-                  </div>
-                );
-              })}
-
-              {/* Vertical connector to next phase */}
-              {phaseIndex < phases.length - 1 && (
-                <div
-                  className="absolute left-[190px] bg-slate-200"
-                  style={{
-                    top: '100%',
-                    width: '2px',
-                    height: '40px',
-                    opacity: getNodeProgress(phaseIndex, phase.nodes.length - 1),
-                    transition: 'opacity 0.3s ease-out',
-                  }}
-                />
-              )}
-            </div>
           </div>
-        ))}
+        </div>
 
-        {/* Completion */}
+        {/* Phase navigation dots */}
+        <div className="fixed right-6 top-1/2 -translate-y-1/2 z-40 flex-col gap-3 hidden md:flex">
+          {phases.map((phase, idx) => (
+            <div
+              key={phase.id}
+              className="group relative flex items-center justify-end"
+            >
+              <span className="absolute right-6 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-white bg-[#424242] px-2 py-1 rounded whitespace-nowrap">
+                {phase.highlight}
+              </span>
+              <div
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  activePhaseIndex === idx
+                    ? 'bg-[#61ffc9] scale-150'
+                    : activePhaseIndex > idx
+                      ? 'bg-[#61ffc9]/50'
+                      : 'bg-[#525252]'
+                }`}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Completion section */}
+      <div className="bg-[#292929] pb-24">
         <div
-          className="px-6 py-12 max-w-[380px]"
+          className="max-w-2xl mx-auto px-6 text-center"
           style={{
-            opacity: getNodeProgress(phases.length - 1, phases[phases.length - 1].nodes.length) > 0.5 ? 1 : 0,
-            transform: getNodeProgress(phases.length - 1, phases[phases.length - 1].nodes.length) > 0.5
-              ? 'translateY(0)'
-              : 'translateY(20px)',
+            opacity: scrollProgress > 0.95 ? 1 : 0,
+            transform: `translateY(${scrollProgress > 0.95 ? 0 : 30}px)`,
             transition: 'all 0.5s ease-out',
           }}
         >
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">🎉</span>
-              <div>
-                <h3 className="font-bold text-slate-800">Complete!</h3>
-                <p className="text-sm text-slate-500">You&apos;ve explored the roadmap</p>
-              </div>
-            </div>
+          <div className="py-16 border-t border-[#424242]">
+            <h3 className="text-3xl font-medium text-white mb-4">
+              Ready to <span className="text-[#61ffc9]">build</span>
+            </h3>
+            <p className="text-[#a3a3a3] mb-8">
+              You&apos;ve explored the complete {roadmap.projectTitle} roadmap.
+            </p>
+            <button
+              onClick={onClose}
+              className="group inline-flex items-center gap-3 px-6 py-3 border border-[#61ffc9] text-white rounded-lg hover:bg-[#61ffc9] hover:text-[#292929] transition-all duration-300"
+            >
+              <span className="text-sm uppercase tracking-wider">Start building</span>
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Right side placeholder for chatbot */}
-      <div className="fixed right-8 bottom-8 w-14 h-14 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-all cursor-pointer shadow-lg">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      {/* Mobile back button */}
+      <button
+        onClick={onClose}
+        className="fixed top-4 left-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-sm text-white md:hidden"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-      </div>
-
-      {/* Node Detail Modal */}
-      {isModalOpen && selectedNode && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-          onClick={() => setIsModalOpen(false)}
-        >
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
-
-          <div
-            className="relative bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-slate-200 animate-modal-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative p-6 border-b border-slate-100">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1 block">
-                    Details
-                  </span>
-                  <h2 className="text-xl font-bold text-slate-800">{selectedNode.title}</h2>
-                </div>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="bg-slate-50 rounded-xl p-4 border-l-4 border-slate-300 mb-6">
-                <p className="text-slate-600 leading-relaxed">
-                  {selectedNode.explanation}
-                </p>
-              </div>
-
-              {selectedNode.resources.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                    Resources
-                  </h3>
-                  <ul className="space-y-2">
-                    {selectedNode.resources.map((resource, index) => (
-                      <li key={index}>
-                        <a
-                          href={resource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 hover:border-slate-200 transition-all duration-200 group"
-                        >
-                          <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900">
-                            {resource.label}
-                          </span>
-                          <svg
-                            className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transform group-hover:translate-x-1 transition-all duration-200"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                          </svg>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {selectedNode.resources.length === 0 && (
-                <div className="text-center py-6 text-sm text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
-                  No resources available yet
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Styles */}
-      <style jsx global>{`
-        @keyframes modal-in {
-          from {
-            opacity: 0;
-            transform: scale(0.95) translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-
-        .animate-modal-in {
-          animation: modal-in 0.25s ease-out;
-        }
-      `}</style>
+      </button>
     </div>
   );
 }
