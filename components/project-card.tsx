@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getProjectProgress } from './project-roadmap-view';
+import { calculateProjectProgress } from './project-roadmap-view';
 
 interface Project {
   id: string;
@@ -21,19 +21,22 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project, isHovered, onClick }: ProjectCardProps) {
-  const [roadmapProgress, setRoadmapProgress] = useState<{ completed: number; total: number } | null>(null);
+  const [roadmapProgress, setRoadmapProgress] = useState<{ completed: number; total: number; percentage: number } | null>(null);
 
-  // Load roadmap progress on mount
+  // Load roadmap progress for in-progress projects
   useEffect(() => {
-    const progress = getProjectProgress(project.id);
-    if (progress.total > 0) {
-      setRoadmapProgress(progress);
+    if (project.status === 'in-progress') {
+      const progress = calculateProjectProgress(project.id);
+      if (progress.total > 0) {
+        setRoadmapProgress(progress);
+      }
     }
-  }, [project.id]);
+  }, [project.id, project.status]);
+
   const statusConfig = {
     completed: { color: 'bg-teal-50 text-teal-700 border border-teal-200/50', icon: '✓', label: 'Completed' },
     'in-progress': { color: 'bg-sky-50 text-sky-700 border border-sky-200/50', icon: '◐', label: 'In Progress' },
-    failed: { color: 'bg-red-50 text-red-600 border border-red-200/50', icon: '✗', label: 'Failed' },
+    failed: { color: 'bg-slate-100 text-slate-500 border border-slate-200/50', icon: '✗', label: 'Failed' },
     upcoming: { color: 'bg-white/50 text-slate-400 border border-slate-200/50', icon: '○', label: 'Upcoming' },
   };
 
@@ -63,7 +66,7 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
             <span className="text-xs">{config.label}</span>
           </div>
           {(project.status === 'completed' || project.status === 'failed') && project.finalMark !== undefined && project.finalMark !== null && (
-            <span className={`text-sm font-semibold ${project.status === 'completed' ? 'text-teal-600' : 'text-red-500'}`}>
+            <span className={`text-sm font-semibold ${project.status === 'completed' ? 'text-teal-600' : 'text-slate-400'}`}>
               {project.finalMark}%
             </span>
           )}
@@ -71,35 +74,17 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
       </div>
 
       {/* Progress bar for in-progress projects */}
-      {project.status === 'in-progress' && project.progress && (
+      {project.status === 'in-progress' && roadmapProgress && roadmapProgress.total > 0 && (
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-slate-500 font-light">Progress</p>
-            <p className="text-sm font-medium text-slate-700">{project.progress}%</p>
+            <p className="text-xs text-slate-500 font-light">Roadmap Progress</p>
+            <p className="text-sm font-medium text-slate-700">{roadmapProgress.completed}/{roadmapProgress.total}</p>
           </div>
           <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-teal-500 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-teal-400 to-sky-500 rounded-full transition-all duration-500"
               style={{
-                width: `${project.progress}%`,
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Roadmap progress */}
-      {roadmapProgress && roadmapProgress.total > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="text-xs text-slate-500 font-light">Roadmap</p>
-            <p className="text-xs text-slate-500">{roadmapProgress.completed}/{roadmapProgress.total}</p>
-          </div>
-          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-teal-500 rounded-full transition-all duration-500"
-              style={{
-                width: `${(roadmapProgress.completed / roadmapProgress.total) * 100}%`,
+                width: `${roadmapProgress.percentage}%`,
               }}
             />
           </div>
@@ -111,21 +96,16 @@ export default function ProjectCard({ project, isHovered, onClick }: ProjectCard
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 font-light">Difficulty</span>
           <div className="flex gap-1">
-            {difficultyStars.map((filled, i) => {
-              // Color based on difficulty: 1-2 green, 3 orange, 4-5 red
-              const getDifficultyColor = () => {
-                if (!filled) return 'bg-slate-200';
-                if (project.difficulty <= 2) return 'bg-green-500';
-                if (project.difficulty === 3) return 'bg-orange-400';
-                return 'bg-red-500';
-              };
-              return (
-                <div
-                  key={i}
-                  className={`w-2 h-2 rounded-full transition-all duration-200 ${getDifficultyColor()}`}
-                />
-              );
-            })}
+            {difficultyStars.map((filled, i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  filled
+                    ? 'bg-slate-400'
+                    : 'bg-slate-200'
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>
