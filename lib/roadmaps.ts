@@ -492,125 +492,130 @@ export const projectRoadmaps: Record<string, ProjectRoadmap> = {
 
   "born2beroot": {
     "projectId": "born2beroot",
-    "projectTitle": "Born2beroot: Server Architecture",
-    "overview": "Born2beroot is your introduction to strict System Administration. You will architect a virtual machine using the 'Principle of Least Privilege' and 'Defense in Depth'. You must manually configure storage encryption (LUKS), logical volume management (LVM), firewall rules, and strict password policies to create a secure, production-grade Linux server environment.",
-    "mermaidDiagram": "flowchart TD\n    Start((START)) --> Prereq[0. PREREQUISITES]\n\n    subgraph Layer1 [1. VIRTUAL HARDWARE & STORAGE]\n        direction TB\n        Prereq --> Hypervisor[Hypervisor Config]\n        Hypervisor --> Partitions[Partitioning Scheme]\n        Partitions --> LUKS[LUKS Encryption]\n        LUKS --> LVM_Arch[LVM Architecture]\n        LVM_Arch --> Mounts[\"Mount Points: /root, /home, /swap\"]\n    end\n\n    Layer1 --> Layer2\n\n    subgraph Layer2 [2. IDENTITY & ACCESS]\n        direction TB\n        Mounts --> RootUser[Root Account]\n        RootUser --> Sudo[Sudo Configuration]\n        Sudo --> UserMgmt[\"User & Group Policy\"]\n        UserMgmt --> PwPolicy[\"Password Security (PAM)\"]\n    end\n\n    Layer2 --> Layer3\n\n    subgraph Layer3 [3. NETWORK HARDENING]\n        direction TB\n        PwPolicy --> SSH[SSH Service Config]\n        SSH --> UFW[UFW Firewall Rules]\n        UFW --> Hostname[\"Hostname & Localhost\"]\n    end\n\n    Layer3 --> Layer4\n\n    subgraph Layer4 [4. OBSERVABILITY]\n        direction TB\n        Hostname --> BashScript[Monitoring Script]\n        BashScript --> SysCommands[System Commands]\n        SysCommands --> Cron[Cron Scheduler]\n        Cron --> Wall[Wall Broadcast]\n    end\n\n    Wall --> Finish((SERVER LIVE))\n\n    %% Conceptual Dependencies\n    LVM_Arch -.-> Partitions\n    Sudo -.-> RootUser\n    BashScript -.-> Sudo\n    SSH -.-> UFW",
+    "projectTitle": "Born2beroot: Secure Systems Architecture",
+    "overview": "Born2beroot is not just a setup guide; it is an exercise in System Hardening. You will construct a secure Linux server from the hardware up. The goal is to implement 'Defense in Depth': Encrypted storage (Layer 1), strict Access Control (Layer 2), Network Filtering (Layer 3), and Automated Observability (Layer 4).",
+    "mermaidDiagram": "flowchart TD\n    Start((START)) --> ISO[1. OS INSTALLATION]\n\n    %% --- LAYER 1: ENCRYPTED STORAGE ---\n    subgraph Storage [LAYER 1: SECURE STORAGE]\n        direction TB\n        ISO --> Partitioning[Partitions: /boot + Primary]\n        Partitioning --> LUKS[LUKS Encryption]\n        LUKS --> LVM_PV[Physical Volume]\n        LVM_PV --> LVM_VG[Volume Group]\n        LVM_VG --> LVM_LV[Logical Volumes]\n        LVM_LV --> Mounts[\"Mounts: /, /home, /var, /swap\"]\n    end\n\n    Storage --> Layer2_Entry\n\n    %% --- LAYER 2: IDENTITY & AUTH (INTERSECTED) ---\n    subgraph Identity [LAYER 2: IDENTITY & ACCESS]\n        direction TB\n        Layer2_Entry[System Boot] --> Root[Root Account]\n        \n        subgraph Policy_Mesh [Security Policies]\n            PAM[\"Password Policy (PAM)\"]\n            Sudo_Cfg[Sudo Configuration]\n        end\n\n        Root --> User_New[New User]\n        \n        %% Intersections\n        PAM -.->|Enforces| Root\n        PAM -.->|Enforces| User_New\n        Sudo_Cfg -.->|Grants Access| Group[User42 Group]\n        User_New --> Group\n    end\n\n    Identity --> Layer3_Entry\n\n    %% --- LAYER 3: NETWORK DEFENSE ---\n    subgraph Network [LAYER 3: NETWORK HARDENING]\n        direction TB\n        Layer3_Entry[Network Init] --> Hostname[Hostname Config]\n        Hostname --> SSH[SSH Service]\n        SSH --> Port_Cfg[\"Port 4242 & No Root Login\"]\n        Port_Cfg --> UFW[UFW Firewall]\n        UFW --> Rules[\"Default Deny / Allow 4242\"]\n    end\n\n    Network --> Layer4_Entry\n\n    %% --- LAYER 4: OBSERVABILITY ---\n    subgraph Monitor [LAYER 4: OBSERVABILITY]\n        direction TB\n        Layer4_Entry[Runtime] --> Cron[Cron Scheduler]\n        Cron -->|Every 10m| Script[monitoring.sh]\n        \n        %% Script pulls data from previous layers\n        Script -.->|Reads| Hostname\n        Script -.->|Reads| Sudo_Cfg\n        Script -.->|Reads| LVM_VG\n        \n        Script --> Wall[Wall Broadcast]\n    end\n\n    Wall --> Finish((SERVER LIVE))",
     "nodes": {
-      "Prereq": {
-        "title": "Prerequisites",
-        "explanation": "You need a virtualization tool (VirtualBox or UTM). You must understand the difference between a Graphical User Interface (GUI) and the Command Line Interface (CLI), as this server will run purely in CLI mode (Headless). You also need the Debian or Rocky Linux ISO file.",
+      "ISO": {
+        "title": "OS Installation (Debian/Rocky)",
+        "explanation": "The foundation. You must choose a stable Linux distribution. During installation, you will perform the initial partitioning. Note: This is a 'headless' installation (CLI only), so no Desktop Environment should be installed.",
         "resources": [
-          { "label": "Debian vs CentOS/Rocky", "url": "https://www.tecmint.com/debian-vs-centos-pros-cons/" },
-          { "label": "Virtualization Basics", "url": "https://www.redhat.com/en/topics/virtualization/what-is-virtualization" }
+          { "label": "Debian Installation Guide", "url": "https://www.debian.org/releases/stable/amd64/" }
         ]
       },
-      "Hypervisor": {
-        "title": "Hypervisor Configuration",
-        "explanation": "Setting up the VM hardware. Crucial settings include allocating RAM (usually 1GB+), vCPU, and bridging the network adapter (or using NAT with port forwarding) to ensure the VM has internet access for package updates.",
+      "Partitioning": {
+        "title": "Manual Partitioning",
+        "explanation": "You cannot use the guided setup. You need a separate unencrypted `/boot` partition (so the bootloader can work) and a generic encrypted partition for the rest of the system.",
         "resources": [
-          { "label": "VirtualBox Network Modes", "url": "https://www.virtualbox.org/manual/ch06.html" }
-        ]
-      },
-      "Partitions": {
-        "title": "Partitioning Scheme",
-        "explanation": "Manual disk partitioning. You typically need a `/boot` partition (unencrypted) to load the kernel, and a primary partition for the rest of the system which will be encrypted. Understanding primary vs. logical partitions is key here.",
-        "resources": [
-          { "label": "Linux Partitioning Guide", "url": "https://tldp.org/HOWTO/Partition/index.html" }
+          { "label": "Linux Partitioning Basics", "url": "https://tldp.org/HOWTO/Partition/index.html" }
         ]
       },
       "LUKS": {
         "title": "LUKS Encryption",
-        "explanation": "Linux Unified Key Setup (LUKS) provides block-device encryption. It encrypts the partition *before* the filesystem is mounted. If the physical disk is stolen, the data is unreadable without the passphrase. This acts as the container for your LVM.",
+        "explanation": "Linux Unified Key Setup. This creates an encrypted container. Even if the hard drive is physically stolen, the data is just random noise without the passphrase. This is 'Encryption at Rest'.",
         "resources": [
-          { "label": "LUKS Concept", "url": "https://wiki.archlinux.org/title/dm-crypt/Device_encryption" }
+          { "label": "LUKS Header & Keys", "url": "https://gitlab.com/cryptsetup/cryptsetup/-/wikis/FrequentlyAskedQuestions" }
         ]
       },
-      "LVM_Arch": {
-        "title": "LVM Architecture",
-        "explanation": "Logical Volume Manager. It abstracts storage. 1. **Physical Volume (PV):** The encrypted partition. 2. **Volume Group (VG):** A pool of storage created from PVs. 3. **Logical Volumes (LV):** Virtual partitions cut from the VG (root, home, swap, var). This allows resizing partitions live without reformating.",
+      "LVM_PV": {
+        "title": "Physical Volume (PV)",
+        "explanation": "The first step of LVM. You mark the decrypted LUKS container as a 'Physical Volume' available for LVM use.",
+        "resources": []
+      },
+      "LVM_VG": {
+        "title": "Volume Group (VG)",
+        "explanation": "The storage pool. You group your PVs into a Volume Group (named `LVMGroup` usually). This allows you to abstract physical disks into a single pool of storage.",
+        "resources": []
+      },
+      "LVM_LV": {
+        "title": "Logical Volumes (LV)",
+        "explanation": "Virtual partitions cut from the VG. You will create separate LVs for `root`, `home`, `swap`, and `var`. Separation ensures that if logs fill up `/var`, they don't crash the system by filling up `/`.",
         "resources": [
-          { "label": "LVM Deep Dive", "url": "https://wiki.archlinux.org/title/LVM" },
           { "label": "LVM Visualized", "url": "https://www.redhat.com/sysadmin/lvm-vs-partitioning" }
         ]
       },
       "Mounts": {
         "title": "Mount Points",
-        "explanation": "Assigning specific Logical Volumes to directory trees. Separating `/var` (logs), `/home` (user data), and `/tmp` prevents a log explosion or user file dump from filling up the root partition and crashing the OS.",
-        "resources": [
-          { "label": "Linux File System Hierarchy", "url": "https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html" }
-        ]
-      },
-      "RootUser": {
-        "title": "The Root Account",
-        "explanation": "The 'God' account. In this project, you learn that logging in as root directly is a security risk. You will set a strong password but primarily access administrative power via `sudo`.",
+        "explanation": "Assigning LVs to the file system hierarchy. `/swap` is special; it acts as virtual RAM when physical RAM is full.",
         "resources": []
       },
-      "Sudo": {
-        "title": "Sudo Configuration",
-        "explanation": "Configuring `/etc/sudoers` (using `visudo`). You must enforce strict rules: limit authentication retries (to slow down brute force), set custom error messages, require a TTY (prevent automated scripts from hijacking sudo), and log all sudo actions to `/var/log/sudo`.",
-        "resources": [
-          { "label": "Sudoers Manual", "url": "https://www.sudo.ws/man/1.8.17/sudoers.man.html" }
-        ]
+      "Root": {
+        "title": "Root Account",
+        "explanation": "The superuser. In a hardened system, direct root access is restricted. You must set a strong password but rarely log in as root directly.",
+        "resources": []
       },
-      "UserMgmt": {
-        "title": "User & Group Policy",
-        "explanation": "Creating a non-root user and specific groups (e.g., `user42`). You learn to manage group memberships to control file access permissions and sudo privileges.",
-        "resources": [
-          { "label": "Linux Users and Groups", "url": "https://wiki.archlinux.org/title/Users_and_groups" }
-        ]
-      },
-      "PwPolicy": {
+      "PAM": {
         "title": "Password Policy (PAM)",
-        "explanation": "Configuring Pluggable Authentication Modules (`common-password`). Requirements: Min length (10), uppercase, lowercase, digits, no username in password, max lifetime (30 days), and history checks (cannot reuse previous passwords). This enforces 'Compliance'.",
+        "explanation": "Pluggable Authentication Modules. You configure `libpam-pwquality` to enforce rules: Minimum length (10), complexity (Upper/Lower/Digit), and Uniqueness (cannot reuse old passwords). This policy acts as a gatekeeper for ALL users.",
         "resources": [
           { "label": "PAM Configuration Guide", "url": "https://www.linux.com/training-tutorials/understanding-pam/" }
         ]
       },
+      "Sudo_Cfg": {
+        "title": "Sudo Configuration",
+        "explanation": "The bridge between normal users and admin power. Configured in `/etc/sudoers`. Hardening rules: Limit password retries (brute force protection), require a TTY (anti-bot), and log input/output (audit trail).",
+        "resources": [
+          { "label": "Sudoers Manual", "url": "https://www.sudo.ws/man/1.8.17/sudoers.man.html" }
+        ]
+      },
+      "User_New": {
+        "title": "New User",
+        "explanation": "A standard user account. This user will not have root privileges by default but will gain them via the `sudo` group membership.",
+        "resources": []
+      },
+      "Group": {
+        "title": "User42 Group",
+        "explanation": "Group management. By adding a user to specific groups (like `sudo` or a custom `user42`), you grant them capabilities without sharing the root password.",
+        "resources": []
+      },
+      "Hostname": {
+        "title": "Hostname",
+        "explanation": "The server's identity on the network (e.g., `login42`). Requires updating `/etc/hostname` and `/etc/hosts`.",
+        "resources": []
+      },
       "SSH": {
         "title": "SSH Service",
-        "explanation": "Secure Shell. You must edit `/etc/ssh/sshd_config`. Security hardening includes: Changing default port to 4242 (obscurity), disabling `PermitRootLogin` (prevent brute forcing root), and usually disabling password auth in favor of SSH Keys (though password auth might be kept for the subject).",
+        "explanation": "The remote administration protocol. It allows you to manage the headless server from your host machine.",
         "resources": [
-          { "label": "Securing SSH", "url": "https://infosec.mozilla.org/guidelines/openssh" }
+          { "label": "SSH Hardening", "url": "https://infosec.mozilla.org/guidelines/openssh" }
         ]
+      },
+      "Port_Cfg": {
+        "title": "Port 4242 & Root Login",
+        "explanation": "Security through Obscurity (Port 4242) and Attack Surface Reduction (Disable `PermitRootLogin`). This forces attackers to guess a custom port AND guess a valid username before trying passwords.",
+        "resources": []
       },
       "UFW": {
         "title": "UFW Firewall",
-        "explanation": "Uncomplicated Firewall. It acts as a frontend for iptables/nftables. The rule is 'Default Deny Incoming'. You must explicitly open port 4242. This ensures no other services are exposed to the network.",
-        "resources": [
-          { "label": "UFW Essentials", "url": "https://www.digitalocean.com/community/tutorials/how-to-setup-a-firewall-with-ufw-on-an-ubuntu-and-debian-cloud-server" }
-        ]
-      },
-      "Hostname": {
-        "title": "Hostname Configuration",
-        "explanation": "Setting the machine's name on the network. This involves editing `/etc/hostname` and `/etc/hosts` to resolve the local IP (127.0.0.1) to the new login name.",
+        "explanation": "Uncomplicated Firewall. It controls incoming and outgoing traffic. You must enable it.",
         "resources": []
       },
-      "BashScript": {
-        "title": "Monitoring Script",
-        "explanation": "A bash script designed to gather system metrics. It requires command chaining, text processing (awk/grep), and arithmetic expansion to format output correctly.",
+      "Rules": {
+        "title": "Firewall Rules",
+        "explanation": "The core rule is 'Default Deny Incoming'. This means nothing gets in unless explicitly allowed. You allow only port 4242.",
         "resources": [
-          { "label": "Bash Scripting Guide", "url": "https://tldp.org/LDP/abs/html/" }
-        ]
-      },
-      "SysCommands": {
-        "title": "System Commands",
-        "explanation": "The tools needed for the script: `uname` (kernel info), `lscpu` (processor), `free -m` (RAM), `df -h` (Disk usage), `who -b` (Boot time), `ss/netstat` (Network connections), and `journalctl` (Sudo logs).",
-        "resources": [
-          { "label": "Linux Command Cheat Sheet", "url": "https://guru99.com/linux-commands-cheat-sheet.html" }
+          { "label": "UFW Rule Syntax", "url": "https://www.digitalocean.com/community/tutorials/how-to-setup-a-firewall-with-ufw-on-an-ubuntu-and-debian-cloud-server" }
         ]
       },
       "Cron": {
         "title": "Cron Scheduler",
-        "explanation": "The system job scheduler. You edit `/etc/crontab` or root's crontab. The syntax `*/10 * * * *` ensures the script runs every 10 minutes. Understanding the difference between user crontabs and the system-wide crontab is important.",
+        "explanation": "Time-based job scheduler. You edit `/etc/crontab` to run the monitoring script automatically every 10 minutes (`*/10 * * * *`).",
         "resources": [
           { "label": "Crontab Guru", "url": "https://crontab.guru/" }
         ]
       },
+      "Script": {
+        "title": "monitoring.sh",
+        "explanation": "The central nervous system. This Bash script gathers live data (CPU load, RAM usage, LVM usage, Sudo logs) and formats it. It proves you can extract kernel data programmatically.",
+        "resources": [
+          { "label": "Bash Scripting Guide", "url": "https://tldp.org/LDP/abs/html/" }
+        ]
+      },
       "Wall": {
         "title": "Wall Broadcast",
-        "explanation": "The `wall` command sends a message to all logged-in users' terminals. Your script pipes its output to `wall`, ensuring that any admin logged in sees the server status every 10 minutes.",
+        "explanation": "The output mechanism. `wall` (write all) broadcasts the script's output to the terminal of every logged-in user, ensuring administrators are always aware of system health.",
         "resources": [
-          { "label": "Wall Command", "url": "https://linux.die.net/man/1/wall" }
+          { "label": "Man wall", "url": "https://linux.die.net/man/1/wall" }
         ]
       }
     }
