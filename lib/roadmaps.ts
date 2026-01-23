@@ -693,86 +693,149 @@ export const projectRoadmaps: Record<string, ProjectRoadmap> = {
     }
   },
 
-  'codexion': {
-    projectId: 'codexion',
-    projectTitle: 'Codexion',
-    overview: 'Master Real-Time Systems and Concurrency. Codexion is a high-performance simulation of a collaborative workspace where autonomous agents compete for limited resources under strict time constraints. Implement complex scheduling algorithms to arbitrate access and prevent deadlocks.',
-    mermaidDiagram: `flowchart TD
-    subgraph Kernel [PHASE 1: INITIALIZATION]
-        direction TB
-        start((START)) --> args[1. Argument Parsing]
-        args --> god_struct[2. The God Struct]
-        god_struct --> mutex_init[3. Mutex Setup]
-        mutex_init --> time_init[4. Time Primitives]
-    end
-
-    subgraph Runtime [PHASE 2: RUNTIME ENGINE]
-        direction TB
-        spawn[5. Spawn Threads]
-        monitor([6. Watchdog Monitor])
-        monitor -.->|CHECKS| routine
-
-        subgraph Lifecycle [THE CODER LOOP]
-            direction TB
-            routine[7. Coder Routine] --> action{Action?}
-            action -- THINK --> refactor[8. Refactor]
-            action -- EAT --> request[9. Request Resources]
-            action -- SLEEP --> debug[10. Debug]
-            refactor --> request
-            debug --> routine
-        end
-        request <--> arbiter
-    end
-
-    subgraph Scheduler [PHASE 3: THE SCHEDULER]
-        direction TB
-        arbiter[11. Arbitration Logic]
-        arbiter --> policy{Policy?}
-        policy -- FIFO --> fifo_q[12. FIFO Queue]
-        policy -- EDF --> heap[13. Min-Heap Priority]
-        fifo_q --> check[14. Availability Check]
-        heap --> check
-        check --> grant[15. Grant Locks]
-        grant --> cooldown[16. Trigger Cooldown]
-    end
-
-    subgraph Termination [PHASE 4: SHUTDOWN]
-        direction TB
-        stop((STOP)) --> join[17. Thread Join]
-        join --> cleanup[18. Memory Cleanup]
-        cleanup --> helgrind[19. Race Detection]
-    end
-
-    time_init --> spawn
-    spawn --> monitor
-    spawn --> routine
-    grant --> debug
-    monitor -- FATAL --> stop`,
-    nodes: {
-      'args': {
-        title: 'Argument Parsing',
-        explanation: 'Validate mandatory arguments. Ensure inputs are integers, values are positive, scheduler is "fifo" or "edf".',
-        resources: [{ label: 'Strtol vs Atoi', url: 'https://stackoverflow.com/questions/7021725/how-to-convert-a-string-to-integer-in-c' }]
+  "codexion": {
+    "projectId": "codexion",
+    "projectTitle": "Codexion: Real-Time Concurrency",
+    "overview": "Codexion is a high-performance simulation of a collaborative workspace. You must manage 'N' autonomous threads (Agents) competing for limited shared resources (Mutexes) under strict time constraints. Unlike standard concurrency problems, Codexion requires you to implement specific scheduling policies (FIFO or Earliest Deadline First) to arbitrate access, prevent deadlocks, and avoid starvation.",
+    "mermaidDiagram": "flowchart TD\n    Start((START)) --> Prereq[0. PREREQUISITES]\n\n    subgraph Phase0 [1. INITIALIZATION]\n        direction TB\n        Prereq --> Args[Argument Parsing]\n        Args --> GodStruct[Shared Memory Context]\n        GodStruct --> MutexInit[Mutex Initialization]\n        MutexInit --> TimeInit[Time Primitives]\n    end\n\n    Phase0 --> Phase1\n\n    subgraph Phase1 [2. THREAD ORCHESTRATION]\n        direction TB\n        Spawn[pthread_create: Spawning]\n        Spawn --> Monitor[The Watchdog Thread]\n        Spawn --> Routine[Agent Routine Loop]\n    end\n\n    Phase1 --> Phase2\n\n    subgraph Phase2 [3. THE LIFECYCLE LOOP]\n        direction TB\n        Routine --> ActionCheck{State Check}\n        ActionCheck -- \"Thinking\" --> Refactor[State: Refactor]\n        ActionCheck -- \"Hungry\" --> Scheduler[Resource Request]\n        ActionCheck -- \"Sleeping\" --> Debug[State: Debug]\n        \n        Refactor --> Scheduler\n        Debug --> ActionCheck\n    end\n\n    subgraph Phase3 [4. THE SCHEDULER]\n        direction TB\n        Scheduler --> LockCheck{Can Lock?}\n        \n        subgraph Algorithms [Arbitration Policies]\n            LockCheck -- \"Policy: FIFO\" --> FIFO[Queue: First-In-First-Out]\n            LockCheck -- \"Policy: EDF\" --> EDF[Min-Heap: Earliest Deadline]\n        end\n        \n        FIFO --> Arbiter[Arbiter Logic]\n        EDF --> Arbiter\n        Arbiter --> MutexLock[Mutex Lock]\n        MutexLock --> Eat[State: Eating/Working]\n        Eat --> TimeUpdate[Update Last Meal Time]\n        TimeUpdate --> MutexUnlock[Mutex Unlock]\n        MutexUnlock --> Debug\n    end\n\n    Phase2 --- Phase3\n\n    subgraph Phase4 [5. MONITORING & LOGGING]\n        direction TB\n        Monitor -.->|Read| TimeCheck{Deadline Missed?}\n        TimeCheck -- YES --> PrintDeath[Log: TERMINATION]\n        TimeCheck -- NO --> Yield[usleep: Yield CPU]\n        PrintDeath --> StopFlag[Set Global Stop]\n        Logger[Thread-Safe Logging] -.-> Eat\n    end\n\n    subgraph Phase5 [6. SHUTDOWN]\n        direction TB\n        StopFlag --> Join[pthread_join]\n        Join --> Destroy[mutex_destroy]\n        Destroy --> Free[Memory Cleanup]\n    end\n\n    Monitor --> Stop((STOP))\n    Free --> Finish((CLEAN EXIT))\n\n    %% Logic Dependencies\n    TimeInit -.-> TimeUpdate\n    TimeInit -.-> Monitor\n    MutexInit -.-> MutexLock\n    Refactor -.-> Logger",
+    "nodes": {
+      "Prereq": {
+        "title": "Prerequisites",
+        "explanation": "Concurrency is hard. Before starting, you must understand the difference between a Process and a Thread. Threads share the same memory space, which makes data exchange easy but introduces 'Race Conditions'. You must also understand the 'dining philosophers problem', which this project is based on.",
+        "resources": [
+          { "label": "Processes vs Threads", "url": "https://www.geeksforgeeks.org/difference-between-process-and-thread/" },
+          { "label": "The Dining Philosophers Problem", "url": "https://en.wikipedia.org/wiki/Dining_philosophers_problem" }
+        ]
       },
-      'mutex_init': {
-        title: 'Mutex Setup',
-        explanation: 'Initialize synchronization primitives. Mutexes for: each resource, the logger, and data access protection.',
-        resources: [{ label: 'pthread_mutex_init', url: 'https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_mutex_init.html' }]
+      "Args": {
+        "title": "Argument Parsing",
+        "explanation": "The program accepts arguments defining the simulation rules: number of agents, time to die, time to eat, time to sleep. You must validate that these are positive integers. You also need to parse the 'Scheduler Policy' flag (e.g., --fifo or --edf).",
+        "resources": [
+          { "label": "Safe String Conversion", "url": "https://stackoverflow.com/questions/7021725/how-to-convert-a-string-to-integer-in-c" }
+        ]
       },
-      'spawn': {
-        title: 'Spawn Threads',
-        explanation: 'Launch N worker threads and 1 monitor thread. Pass specific pointer to each thread with its ID.',
-        resources: [{ label: 'pthread_create', url: 'https://hpc-tutorials.llnl.gov/posix/creating_and_terminating_threads/' }]
+      "GodStruct": {
+        "title": "Shared Memory (The God Struct)",
+        "explanation": "Since threads share memory, you typically create a main structure containing the global simulation state (e.g., 'is the simulation running?', 'total agents') and an array of agent structures. This avoids passing too many arguments to thread functions.",
+        "resources": []
       },
-      'heap': {
-        title: 'EDF Strategy',
-        explanation: 'Earliest Deadline First using Min-Heap. Priority key = last_action + time_to_deadline.',
-        resources: [{ label: 'Binary Heap', url: 'https://www.geeksforgeeks.org/binary-heap/' }]
+      "MutexInit": {
+        "title": "Mutex Initialization",
+        "explanation": "A Mutex (Mutual Exclusion) is a lock. You need one mutex per 'resource' (fork/computer) to prevent two agents from using it simultaneously. You also need a 'global' mutex for writing to the console (Logging) to prevent scrambled text.",
+        "resources": [
+          { "label": "pthread_mutex_init", "url": "https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_mutex_init.html" }
+        ]
       },
-      'helgrind': {
-        title: 'Race Detection',
-        explanation: 'Run valgrind --tool=helgrind. Zero data races allowed for passing grade.',
-        resources: []
+      "TimeInit": {
+        "title": "Time Primitives",
+        "explanation": "Real-time systems require millisecond precision. You cannot use `time()`; you must use `gettimeofday()`. You will need a helper function to return the 'current time in milliseconds' to calculate deadlines and durations accurately.",
+        "resources": [
+          { "label": "gettimeofday Man Page", "url": "https://linux.die.net/man/2/gettimeofday" }
+        ]
+      },
+      "Spawn": {
+        "title": "pthread_create",
+        "explanation": "This system call starts a new thread. You will loop `N` times to create `N` agents. Crucially, you must pass a pointer to the specific agent's data structure as the argument so the thread knows 'who' it is.",
+        "resources": [
+          { "label": "pthread_create Tutorial", "url": "https://hpc-tutorials.llnl.gov/posix/creating_and_terminating_threads/" }
+        ]
+      },
+      "Monitor": {
+        "title": "The Watchdog Thread",
+        "explanation": "A separate thread that does not participate in the simulation but observes it. It loops constantly, checking if any agent has exceeded their `time_to_die`. If so, it sets the `StopFlag` and prints the death message. This ensures death is detected instantly.",
+        "resources": [
+          { "label": "The Monitor Pattern", "url": "https://en.wikipedia.org/wiki/Monitor_(synchronization)" }
+        ]
+      },
+      "Routine": {
+        "title": "Agent Routine Loop",
+        "explanation": "The code that every agent executes. It is an infinite loop that cycles through states: Thinking -> Requesting Resources -> Eating -> Sleeping. The loop breaks only when the `StopFlag` is detected.",
+        "resources": []
+      },
+      "Refactor": {
+        "title": "State: Refactor (Thinking)",
+        "explanation": "The default state. An agent waits here until they are hungry. In standard algorithms, this is just a pass-through, but in complex simulations, this is where you might implement 'Thinking time' logic.",
+        "resources": []
+      },
+      "Debug": {
+        "title": "State: Debug (Sleeping)",
+        "explanation": "After working (Eating), the agent enters a cooldown period. This is simulated using `usleep`. The agent effectively yields the CPU during this time.",
+        "resources": [
+          { "label": "usleep vs sleep", "url": "https://man7.org/linux/man-pages/man3/usleep.3.html" }
+        ]
+      },
+      "Scheduler": {
+        "title": "Resource Request",
+        "explanation": "The critical junction. An agent needs two specific mutexes (left and right) to proceed. If they just grab them blindly, you get Deadlock. The Scheduler decides *when* they are allowed to grab them.",
+        "resources": [
+          { "label": "Deadlock Conditions", "url": "https://www.geeksforgeeks.org/deadlock-introduction/" }
+        ]
+      },
+      "LockCheck": {
+        "title": "Arbitration Logic",
+        "explanation": "Depending on the complexity, you might check if locks are free (using `pthread_mutex_trylock`) or simply wait for permission from a central arbiter.",
+        "resources": []
+      },
+      "FIFO": {
+        "title": "Policy: FIFO",
+        "explanation": "First-In-First-Out. Agents are placed in a queue when they get hungry. The arbiter only allows the head of the queue to attempt locking resources. This is fair but not optimized for survival.",
+        "resources": [
+          { "label": "FIFO Queue", "url": "https://www.geeksforgeeks.org/queue-data-structure/" }
+        ]
+      },
+      "EDF": {
+        "title": "Policy: EDF",
+        "explanation": "Earliest Deadline First. A priority queue (Min-Heap) is used. The agent closest to starving (`time_last_meal + time_to_die`) is given highest priority to acquire locks. This maximizes system survival duration.",
+        "resources": [
+          { "label": "Earliest Deadline First Scheduling", "url": "https://en.wikipedia.org/wiki/Earliest_deadline_first_scheduling" },
+          { "label": "Binary Heap Implementation", "url": "https://www.geeksforgeeks.org/binary-heap/" }
+        ]
+      },
+      "Arbiter": {
+        "title": "The Arbiter",
+        "explanation": "The mechanism that resolves conflicts. Even with a policy, if Agent A needs locks 1 and 2, and Agent B needs 2 and 3, the Arbiter ensures 2 isn't given to B if A is prioritized.",
+        "resources": []
+      },
+      "MutexLock": {
+        "title": "Locking Resources",
+        "explanation": "The agent calls `pthread_mutex_lock` on their resources. To prevent 'Circular Wait' (Deadlock), a common strategy is to always lock the lower ID mutex first, then the higher ID.",
+        "resources": [
+          { "label": "Dining Philosophers Solutions", "url": "https://adit.io/posts/2013-05-11-The-Dining-Philosophers-Problem-With-Ron-Swanson.html" }
+        ]
+      },
+      "Eat": {
+        "title": "State: Eating",
+        "explanation": "The agent holds the locks and works. The simulation waits for `time_to_eat`. This is the only state where the agent resets their `last_meal_time`, preventing starvation.",
+        "resources": []
+      },
+      "TimeUpdate": {
+        "title": "Atomic Time Update",
+        "explanation": "Updating `last_meal_time` allows the Monitor to know the agent is safe. This read/write operation happens in two different threads (Agent writes, Monitor reads), so it technically requires its own mutex (a 'data race' protection lock) to be thread-safe.",
+        "resources": [
+          { "label": "What is a Data Race?", "url": "https://stackoverflow.com/questions/34510/what-is-a-race-condition" }
+        ]
+      },
+      "Logger": {
+        "title": "Thread-Safe Logging",
+        "explanation": "When printing state changes (e.g., 'Agent 1 is eating'), you must lock a shared print mutex. Otherwise, if two agents print at the exact same time, the text on the console will be interleaved and unreadable.",
+        "resources": []
+      },
+      "StopFlag": {
+        "title": "Global Stop Flag",
+        "explanation": "A shared boolean/integer (protected by a mutex). When the Monitor sets this to 1, all Agent threads notice it in their next loop iteration and break/return, initiating shutdown.",
+        "resources": []
+      },
+      "Join": {
+        "title": "pthread_join",
+        "explanation": "The main thread waits here until all spawned threads have returned. This ensures that the program doesn't exit while threads are still running, which would cause leaks or crashes.",
+        "resources": [
+          { "label": "pthread_join logic", "url": "https://man7.org/linux/man-pages/man3/pthread_join.3.html" }
+        ]
+      },
+      "Destroy": {
+        "title": "Mutex Destroy",
+        "explanation": "Clean up kernel resources. Every initialized mutex must be destroyed using `pthread_mutex_destroy` before the program exits.",
+        "resources": []
       }
     }
   },
