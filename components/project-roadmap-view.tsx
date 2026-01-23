@@ -577,20 +577,20 @@ export default function ProjectRoadmapView({ projectId, onClose }: ProjectRoadma
                 className="mermaid min-h-[400px]"
               />
             </div>
+          </div>
 
-            {/* Legend */}
-            <div className={`max-w-3xl mx-auto ${isVisible ? 'animate-fade-in-up delay-200' : 'opacity-0'}`}>
-              <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500 bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-slate-200/50">
-                {Object.entries(statusColors).map(([status, colors]) => (
-                  <div key={status} className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: colors.dot }}
-                    />
-                    <span>{colors.text}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Legend - Fixed floating toast at bottom */}
+          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 ${isVisible ? 'animate-fade-in-up delay-200' : 'opacity-0'}`}>
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm text-slate-500 bg-white/95 backdrop-blur-md rounded-full px-6 py-3 border border-slate-200/50 shadow-lg">
+              {Object.entries(statusColors).map(([status, colors]) => (
+                <div key={status} className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: colors.dot }}
+                  />
+                  <span>{colors.text}</span>
+                </div>
+              ))}
             </div>
           </div>
 
