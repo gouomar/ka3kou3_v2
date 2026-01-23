@@ -81,8 +81,45 @@ export default function ProjectRoadmapView({ projectId, onClose }: ProjectRoadma
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [nodeStates, setNodeStates] = useState<NodeStates>({});
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const mermaidRef = useRef<HTMLDivElement>(null);
+  const roadmapContainerRef = useRef<HTMLDivElement>(null);
+
+  // Zoom constants
+  const MIN_ZOOM = 0.25;
+  const MAX_ZOOM = 2;
+  const ZOOM_STEP = 0.25;
+
+  // Zoom handlers
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
+  };
+
+  const handleZoomReset = () => {
+    setZoomLevel(1);
+  };
+
+  // Handle mouse wheel zoom
+  useEffect(() => {
+    const container = roadmapContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+        setZoomLevel((prev) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta)));
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
 
   // Load roadmap data and states
   useEffect(() => {
@@ -446,6 +483,37 @@ export default function ProjectRoadmapView({ projectId, onClose }: ProjectRoadma
                 </span>
               </div>
 
+              {/* Zoom controls */}
+              <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= MIN_ZOOM}
+                  className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-white rounded transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Zoom out (Ctrl + scroll)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleZoomReset}
+                  className="px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-white rounded transition-all duration-200 min-w-[48px]"
+                  title="Reset zoom"
+                >
+                  {Math.round(zoomLevel * 100)}%
+                </button>
+                <button
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= MAX_ZOOM}
+                  className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-white rounded transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Zoom in (Ctrl + scroll)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+
               <button
                 onClick={resetAllStates}
                 className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300 rounded-lg transition-all duration-200 bg-white"
@@ -484,6 +552,7 @@ export default function ProjectRoadmapView({ projectId, onClose }: ProjectRoadma
         <div className="flex h-[calc(100vh-61px)]">
           {/* Roadmap area */}
           <div
+            ref={roadmapContainerRef}
             className="flex-1 overflow-auto roadmap-scroll p-6 relative"
             onClick={(e) => {
               // If clicking on the roadmap area (not on a node), clear the selected node
@@ -494,9 +563,14 @@ export default function ProjectRoadmapView({ projectId, onClose }: ProjectRoadma
               }
             }}
           >
-            {/* Mermaid diagram */}
+            {/* Mermaid diagram with zoom */}
             <div
               className={`pb-12 pt-4 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}
+              style={{
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'top center',
+                transition: 'transform 0.2s ease-out',
+              }}
             >
               <div
                 ref={mermaidRef}

@@ -490,72 +490,128 @@ export const projectRoadmaps: Record<string, ProjectRoadmap> = {
     }
   },
 
-  'born2beroot': {
-    projectId: 'born2beroot',
-    projectTitle: 'Born2beroot',
-    overview: 'Set up a secure virtual machine server from scratch. This system administration project teaches you Linux fundamentals, security best practices, and server configuration. You\'ll configure services, manage users, and implement security policies.',
-    mermaidDiagram: `flowchart TD
-    subgraph Setup [PHASE 1: VM SETUP]
-        direction TB
-        start((START)) --> download[1. Download Debian/Rocky]
-        download --> create_vm[2. Create VM in VirtualBox]
-        create_vm --> partition[3. Disk Partitioning]
-        partition --> lvm[4. LVM Configuration]
-    end
-
-    subgraph Security [PHASE 2: SECURITY]
-        direction TB
-        lvm --> sudo_cfg[5. Configure Sudo]
-        sudo_cfg --> ssh[6. SSH Setup]
-        ssh --> ufw[7. UFW Firewall]
-        ufw --> password[8. Password Policy]
-    end
-
-    subgraph Users [PHASE 3: USER MANAGEMENT]
-        direction TB
-        password --> create_user[9. Create Users]
-        create_user --> groups[10. Group Assignment]
-        groups --> hostname[11. Hostname Config]
-    end
-
-    subgraph Monitor [PHASE 4: MONITORING]
-        direction TB
-        hostname --> script[12. monitoring.sh]
-        script --> cron[13. Cron Job]
-        cron --> wall[14. Wall Broadcast]
-    end
-
-    wall --> finish((COMPLETE))`,
-    nodes: {
-      'partition': {
-        title: 'Disk Partitioning',
-        explanation: 'Create encrypted partitions with specific sizes. Understand boot, root, swap, home, var, and tmp partitions.',
-        resources: [{ label: 'Linux Partitioning', url: 'https://wiki.archlinux.org/title/Partitioning' }]
+  "born2beroot": {
+    "projectId": "born2beroot",
+    "projectTitle": "Born2beroot: Server Architecture",
+    "overview": "Born2beroot is your introduction to strict System Administration. You will architect a virtual machine using the 'Principle of Least Privilege' and 'Defense in Depth'. You must manually configure storage encryption (LUKS), logical volume management (LVM), firewall rules, and strict password policies to create a secure, production-grade Linux server environment.",
+    "mermaidDiagram": "flowchart TD\n    Start((START)) --> Prereq[0. PREREQUISITES]\n\n    subgraph Layer1 [1. VIRTUAL HARDWARE & STORAGE]\n        direction TB\n        Prereq --> Hypervisor[Hypervisor Config]\n        Hypervisor --> Partitions[Partitioning Scheme]\n        Partitions --> LUKS[LUKS Encryption]\n        LUKS --> LVM_Arch[LVM Architecture]\n        LVM_Arch --> Mounts[\"Mount Points: /root, /home, /swap\"]\n    end\n\n    Layer1 --> Layer2\n\n    subgraph Layer2 [2. IDENTITY & ACCESS]\n        direction TB\n        Mounts --> RootUser[Root Account]\n        RootUser --> Sudo[Sudo Configuration]\n        Sudo --> UserMgmt[\"User & Group Policy\"]\n        UserMgmt --> PwPolicy[\"Password Security (PAM)\"]\n    end\n\n    Layer2 --> Layer3\n\n    subgraph Layer3 [3. NETWORK HARDENING]\n        direction TB\n        PwPolicy --> SSH[SSH Service Config]\n        SSH --> UFW[UFW Firewall Rules]\n        UFW --> Hostname[\"Hostname & Localhost\"]\n    end\n\n    Layer3 --> Layer4\n\n    subgraph Layer4 [4. OBSERVABILITY]\n        direction TB\n        Hostname --> BashScript[Monitoring Script]\n        BashScript --> SysCommands[System Commands]\n        SysCommands --> Cron[Cron Scheduler]\n        Cron --> Wall[Wall Broadcast]\n    end\n\n    Wall --> Finish((SERVER LIVE))\n\n    %% Conceptual Dependencies\n    LVM_Arch -.-> Partitions\n    Sudo -.-> RootUser\n    BashScript -.-> Sudo\n    SSH -.-> UFW",
+    "nodes": {
+      "Prereq": {
+        "title": "Prerequisites",
+        "explanation": "You need a virtualization tool (VirtualBox or UTM). You must understand the difference between a Graphical User Interface (GUI) and the Command Line Interface (CLI), as this server will run purely in CLI mode (Headless). You also need the Debian or Rocky Linux ISO file.",
+        "resources": [
+          { "label": "Debian vs CentOS/Rocky", "url": "https://www.tecmint.com/debian-vs-centos-pros-cons/" },
+          { "label": "Virtualization Basics", "url": "https://www.redhat.com/en/topics/virtualization/what-is-virtualization" }
+        ]
       },
-      'lvm': {
-        title: 'LVM Configuration',
-        explanation: 'Logical Volume Manager for flexible disk management. Create volume groups and logical volumes within encrypted partition.',
-        resources: [{ label: 'LVM Guide', url: 'https://wiki.archlinux.org/title/LVM' }]
+      "Hypervisor": {
+        "title": "Hypervisor Configuration",
+        "explanation": "Setting up the VM hardware. Crucial settings include allocating RAM (usually 1GB+), vCPU, and bridging the network adapter (or using NAT with port forwarding) to ensure the VM has internet access for package updates.",
+        "resources": [
+          { "label": "VirtualBox Network Modes", "url": "https://www.virtualbox.org/manual/ch06.html" }
+        ]
       },
-      'sudo_cfg': {
-        title: 'Sudo Configuration',
-        explanation: 'Configure /etc/sudoers with strict rules: limited retries, custom messages, TTY requirement, and secure paths.',
-        resources: [{ label: 'Sudoers Manual', url: 'https://www.sudo.ws/man/1.8.17/sudoers.man.html' }]
+      "Partitions": {
+        "title": "Partitioning Scheme",
+        "explanation": "Manual disk partitioning. You typically need a `/boot` partition (unencrypted) to load the kernel, and a primary partition for the rest of the system which will be encrypted. Understanding primary vs. logical partitions is key here.",
+        "resources": [
+          { "label": "Linux Partitioning Guide", "url": "https://tldp.org/HOWTO/Partition/index.html" }
+        ]
       },
-      'ssh': {
-        title: 'SSH Setup',
-        explanation: 'Configure SSH on port 4242. Disable root login. Set up key-based authentication for security.',
-        resources: []
+      "LUKS": {
+        "title": "LUKS Encryption",
+        "explanation": "Linux Unified Key Setup (LUKS) provides block-device encryption. It encrypts the partition *before* the filesystem is mounted. If the physical disk is stolen, the data is unreadable without the passphrase. This acts as the container for your LVM.",
+        "resources": [
+          { "label": "LUKS Concept", "url": "https://wiki.archlinux.org/title/dm-crypt/Device_encryption" }
+        ]
       },
-      'ufw': {
-        title: 'UFW Firewall',
-        explanation: 'Uncomplicated Firewall setup. Only allow necessary ports (4242 for SSH). Default deny incoming.',
-        resources: []
+      "LVM_Arch": {
+        "title": "LVM Architecture",
+        "explanation": "Logical Volume Manager. It abstracts storage. 1. **Physical Volume (PV):** The encrypted partition. 2. **Volume Group (VG):** A pool of storage created from PVs. 3. **Logical Volumes (LV):** Virtual partitions cut from the VG (root, home, swap, var). This allows resizing partitions live without reformating.",
+        "resources": [
+          { "label": "LVM Deep Dive", "url": "https://wiki.archlinux.org/title/LVM" },
+          { "label": "LVM Visualized", "url": "https://www.redhat.com/sysadmin/lvm-vs-partitioning" }
+        ]
       },
-      'script': {
-        title: 'Monitoring Script',
-        explanation: 'Bash script displaying system info: architecture, CPU, RAM, disk, network, users, sudo commands count.',
-        resources: []
+      "Mounts": {
+        "title": "Mount Points",
+        "explanation": "Assigning specific Logical Volumes to directory trees. Separating `/var` (logs), `/home` (user data), and `/tmp` prevents a log explosion or user file dump from filling up the root partition and crashing the OS.",
+        "resources": [
+          { "label": "Linux File System Hierarchy", "url": "https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html" }
+        ]
+      },
+      "RootUser": {
+        "title": "The Root Account",
+        "explanation": "The 'God' account. In this project, you learn that logging in as root directly is a security risk. You will set a strong password but primarily access administrative power via `sudo`.",
+        "resources": []
+      },
+      "Sudo": {
+        "title": "Sudo Configuration",
+        "explanation": "Configuring `/etc/sudoers` (using `visudo`). You must enforce strict rules: limit authentication retries (to slow down brute force), set custom error messages, require a TTY (prevent automated scripts from hijacking sudo), and log all sudo actions to `/var/log/sudo`.",
+        "resources": [
+          { "label": "Sudoers Manual", "url": "https://www.sudo.ws/man/1.8.17/sudoers.man.html" }
+        ]
+      },
+      "UserMgmt": {
+        "title": "User & Group Policy",
+        "explanation": "Creating a non-root user and specific groups (e.g., `user42`). You learn to manage group memberships to control file access permissions and sudo privileges.",
+        "resources": [
+          { "label": "Linux Users and Groups", "url": "https://wiki.archlinux.org/title/Users_and_groups" }
+        ]
+      },
+      "PwPolicy": {
+        "title": "Password Policy (PAM)",
+        "explanation": "Configuring Pluggable Authentication Modules (`common-password`). Requirements: Min length (10), uppercase, lowercase, digits, no username in password, max lifetime (30 days), and history checks (cannot reuse previous passwords). This enforces 'Compliance'.",
+        "resources": [
+          { "label": "PAM Configuration Guide", "url": "https://www.linux.com/training-tutorials/understanding-pam/" }
+        ]
+      },
+      "SSH": {
+        "title": "SSH Service",
+        "explanation": "Secure Shell. You must edit `/etc/ssh/sshd_config`. Security hardening includes: Changing default port to 4242 (obscurity), disabling `PermitRootLogin` (prevent brute forcing root), and usually disabling password auth in favor of SSH Keys (though password auth might be kept for the subject).",
+        "resources": [
+          { "label": "Securing SSH", "url": "https://infosec.mozilla.org/guidelines/openssh" }
+        ]
+      },
+      "UFW": {
+        "title": "UFW Firewall",
+        "explanation": "Uncomplicated Firewall. It acts as a frontend for iptables/nftables. The rule is 'Default Deny Incoming'. You must explicitly open port 4242. This ensures no other services are exposed to the network.",
+        "resources": [
+          { "label": "UFW Essentials", "url": "https://www.digitalocean.com/community/tutorials/how-to-setup-a-firewall-with-ufw-on-an-ubuntu-and-debian-cloud-server" }
+        ]
+      },
+      "Hostname": {
+        "title": "Hostname Configuration",
+        "explanation": "Setting the machine's name on the network. This involves editing `/etc/hostname` and `/etc/hosts` to resolve the local IP (127.0.0.1) to the new login name.",
+        "resources": []
+      },
+      "BashScript": {
+        "title": "Monitoring Script",
+        "explanation": "A bash script designed to gather system metrics. It requires command chaining, text processing (awk/grep), and arithmetic expansion to format output correctly.",
+        "resources": [
+          { "label": "Bash Scripting Guide", "url": "https://tldp.org/LDP/abs/html/" }
+        ]
+      },
+      "SysCommands": {
+        "title": "System Commands",
+        "explanation": "The tools needed for the script: `uname` (kernel info), `lscpu` (processor), `free -m` (RAM), `df -h` (Disk usage), `who -b` (Boot time), `ss/netstat` (Network connections), and `journalctl` (Sudo logs).",
+        "resources": [
+          { "label": "Linux Command Cheat Sheet", "url": "https://guru99.com/linux-commands-cheat-sheet.html" }
+        ]
+      },
+      "Cron": {
+        "title": "Cron Scheduler",
+        "explanation": "The system job scheduler. You edit `/etc/crontab` or root's crontab. The syntax `*/10 * * * *` ensures the script runs every 10 minutes. Understanding the difference between user crontabs and the system-wide crontab is important.",
+        "resources": [
+          { "label": "Crontab Guru", "url": "https://crontab.guru/" }
+        ]
+      },
+      "Wall": {
+        "title": "Wall Broadcast",
+        "explanation": "The `wall` command sends a message to all logged-in users' terminals. Your script pipes its output to `wall`, ensuring that any admin logged in sees the server status every 10 minutes.",
+        "resources": [
+          { "label": "Wall Command", "url": "https://linux.die.net/man/1/wall" }
+        ]
       }
     }
   },
@@ -693,7 +749,152 @@ export const projectRoadmaps: Record<string, ProjectRoadmap> = {
     }
   },
 
-  ,
+  "codexion": {
+    "projectId": "codexion",
+    "projectTitle": "Codexion: Real-Time Concurrency",
+    "overview": "Codexion is a high-performance simulation of a collaborative workspace. You must manage 'N' autonomous threads (Agents) competing for limited shared resources (Mutexes) under strict time constraints. Unlike standard concurrency problems, Codexion requires you to implement specific scheduling policies (FIFO or Earliest Deadline First) to arbitrate access, prevent deadlocks, and avoid starvation.",
+    "mermaidDiagram": "flowchart TD\n    Start((START)) --> Prereq[0. PREREQUISITES]\n\n    subgraph Phase0 [1. INITIALIZATION]\n        direction TB\n        Prereq --> Args[Argument Parsing]\n        Args --> GodStruct[Shared Memory Context]\n        GodStruct --> MutexInit[Mutex Initialization]\n        MutexInit --> TimeInit[Time Primitives]\n    end\n\n    Phase0 --> Phase1\n\n    subgraph Phase1 [2. THREAD ORCHESTRATION]\n        direction TB\n        Spawn[pthread_create: Spawning]\n        Spawn --> Monitor[The Watchdog Thread]\n        Spawn --> Routine[Agent Routine Loop]\n    end\n\n    Phase1 --> Phase2\n\n    subgraph Phase2 [3. THE LIFECYCLE LOOP]\n        direction TB\n        Routine --> ActionCheck{State Check}\n        ActionCheck -- \"Thinking\" --> Refactor[State: Refactor]\n        ActionCheck -- \"Hungry\" --> Scheduler[Resource Request]\n        ActionCheck -- \"Sleeping\" --> Debug[State: Debug]\n        \n        Refactor --> Scheduler\n        Debug --> ActionCheck\n    end\n\n    subgraph Phase3 [4. THE SCHEDULER]\n        direction TB\n        Scheduler --> LockCheck{Can Lock?}\n        \n        subgraph Algorithms [Arbitration Policies]\n            LockCheck -- \"Policy: FIFO\" --> FIFO[Queue: First-In-First-Out]\n            LockCheck -- \"Policy: EDF\" --> EDF[Min-Heap: Earliest Deadline]\n        end\n        \n        FIFO --> Arbiter[Arbiter Logic]\n        EDF --> Arbiter\n        Arbiter --> MutexLock[Mutex Lock]\n        MutexLock --> Eat[State: Eating/Working]\n        Eat --> TimeUpdate[Update Last Meal Time]\n        TimeUpdate --> MutexUnlock[Mutex Unlock]\n        MutexUnlock --> Debug\n    end\n\n    Phase2 --- Phase3\n\n    subgraph Phase4 [5. MONITORING & LOGGING]\n        direction TB\n        Monitor -.->|Read| TimeCheck{Deadline Missed?}\n        TimeCheck -- YES --> PrintDeath[Log: TERMINATION]\n        TimeCheck -- NO --> Yield[usleep: Yield CPU]\n        PrintDeath --> StopFlag[Set Global Stop]\n        Logger[Thread-Safe Logging] -.-> Eat\n    end\n\n    subgraph Phase5 [6. SHUTDOWN]\n        direction TB\n        StopFlag --> Join[pthread_join]\n        Join --> Destroy[mutex_destroy]\n        Destroy --> Free[Memory Cleanup]\n    end\n\n    Monitor --> Stop((STOP))\n    Free --> Finish((CLEAN EXIT))\n\n    %% Logic Dependencies\n    TimeInit -.-> TimeUpdate\n    TimeInit -.-> Monitor\n    MutexInit -.-> MutexLock\n    Refactor -.-> Logger",
+    "nodes": {
+      "Prereq": {
+        "title": "Prerequisites",
+        "explanation": "Concurrency is hard. Before starting, you must understand the difference between a Process and a Thread. Threads share the same memory space, which makes data exchange easy but introduces 'Race Conditions'. You must also understand the 'dining philosophers problem', which this project is based on.",
+        "resources": [
+          { "label": "Processes vs Threads", "url": "https://www.geeksforgeeks.org/difference-between-process-and-thread/" },
+          { "label": "The Dining Philosophers Problem", "url": "https://en.wikipedia.org/wiki/Dining_philosophers_problem" }
+        ]
+      },
+      "Args": {
+        "title": "Argument Parsing",
+        "explanation": "The program accepts arguments defining the simulation rules: number of agents, time to die, time to eat, time to sleep. You must validate that these are positive integers. You also need to parse the 'Scheduler Policy' flag (e.g., --fifo or --edf).",
+        "resources": [
+          { "label": "Safe String Conversion", "url": "https://stackoverflow.com/questions/7021725/how-to-convert-a-string-to-integer-in-c" }
+        ]
+      },
+      "GodStruct": {
+        "title": "Shared Memory (The God Struct)",
+        "explanation": "Since threads share memory, you typically create a main structure containing the global simulation state (e.g., 'is the simulation running?', 'total agents') and an array of agent structures. This avoids passing too many arguments to thread functions.",
+        "resources": []
+      },
+      "MutexInit": {
+        "title": "Mutex Initialization",
+        "explanation": "A Mutex (Mutual Exclusion) is a lock. You need one mutex per 'resource' (fork/computer) to prevent two agents from using it simultaneously. You also need a 'global' mutex for writing to the console (Logging) to prevent scrambled text.",
+        "resources": [
+          { "label": "pthread_mutex_init", "url": "https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_mutex_init.html" }
+        ]
+      },
+      "TimeInit": {
+        "title": "Time Primitives",
+        "explanation": "Real-time systems require millisecond precision. You cannot use `time()`; you must use `gettimeofday()`. You will need a helper function to return the 'current time in milliseconds' to calculate deadlines and durations accurately.",
+        "resources": [
+          { "label": "gettimeofday Man Page", "url": "https://linux.die.net/man/2/gettimeofday" }
+        ]
+      },
+      "Spawn": {
+        "title": "pthread_create",
+        "explanation": "This system call starts a new thread. You will loop `N` times to create `N` agents. Crucially, you must pass a pointer to the specific agent's data structure as the argument so the thread knows 'who' it is.",
+        "resources": [
+          { "label": "pthread_create Tutorial", "url": "https://hpc-tutorials.llnl.gov/posix/creating_and_terminating_threads/" }
+        ]
+      },
+      "Monitor": {
+        "title": "The Watchdog Thread",
+        "explanation": "A separate thread that does not participate in the simulation but observes it. It loops constantly, checking if any agent has exceeded their `time_to_die`. If so, it sets the `StopFlag` and prints the death message. This ensures death is detected instantly.",
+        "resources": [
+          { "label": "The Monitor Pattern", "url": "https://en.wikipedia.org/wiki/Monitor_(synchronization)" }
+        ]
+      },
+      "Routine": {
+        "title": "Agent Routine Loop",
+        "explanation": "The code that every agent executes. It is an infinite loop that cycles through states: Thinking -> Requesting Resources -> Eating -> Sleeping. The loop breaks only when the `StopFlag` is detected.",
+        "resources": []
+      },
+      "Refactor": {
+        "title": "State: Refactor (Thinking)",
+        "explanation": "The default state. An agent waits here until they are hungry. In standard algorithms, this is just a pass-through, but in complex simulations, this is where you might implement 'Thinking time' logic.",
+        "resources": []
+      },
+      "Debug": {
+        "title": "State: Debug (Sleeping)",
+        "explanation": "After working (Eating), the agent enters a cooldown period. This is simulated using `usleep`. The agent effectively yields the CPU during this time.",
+        "resources": [
+          { "label": "usleep vs sleep", "url": "https://man7.org/linux/man-pages/man3/usleep.3.html" }
+        ]
+      },
+      "Scheduler": {
+        "title": "Resource Request",
+        "explanation": "The critical junction. An agent needs two specific mutexes (left and right) to proceed. If they just grab them blindly, you get Deadlock. The Scheduler decides *when* they are allowed to grab them.",
+        "resources": [
+          { "label": "Deadlock Conditions", "url": "https://www.geeksforgeeks.org/deadlock-introduction/" }
+        ]
+      },
+      "LockCheck": {
+        "title": "Arbitration Logic",
+        "explanation": "Depending on the complexity, you might check if locks are free (using `pthread_mutex_trylock`) or simply wait for permission from a central arbiter.",
+        "resources": []
+      },
+      "FIFO": {
+        "title": "Policy: FIFO",
+        "explanation": "First-In-First-Out. Agents are placed in a queue when they get hungry. The arbiter only allows the head of the queue to attempt locking resources. This is fair but not optimized for survival.",
+        "resources": [
+          { "label": "FIFO Queue", "url": "https://www.geeksforgeeks.org/queue-data-structure/" }
+        ]
+      },
+      "EDF": {
+        "title": "Policy: EDF",
+        "explanation": "Earliest Deadline First. A priority queue (Min-Heap) is used. The agent closest to starving (`time_last_meal + time_to_die`) is given highest priority to acquire locks. This maximizes system survival duration.",
+        "resources": [
+          { "label": "Earliest Deadline First Scheduling", "url": "https://en.wikipedia.org/wiki/Earliest_deadline_first_scheduling" },
+          { "label": "Binary Heap Implementation", "url": "https://www.geeksforgeeks.org/binary-heap/" }
+        ]
+      },
+      "Arbiter": {
+        "title": "The Arbiter",
+        "explanation": "The mechanism that resolves conflicts. Even with a policy, if Agent A needs locks 1 and 2, and Agent B needs 2 and 3, the Arbiter ensures 2 isn't given to B if A is prioritized.",
+        "resources": []
+      },
+      "MutexLock": {
+        "title": "Locking Resources",
+        "explanation": "The agent calls `pthread_mutex_lock` on their resources. To prevent 'Circular Wait' (Deadlock), a common strategy is to always lock the lower ID mutex first, then the higher ID.",
+        "resources": [
+          { "label": "Dining Philosophers Solutions", "url": "https://adit.io/posts/2013-05-11-The-Dining-Philosophers-Problem-With-Ron-Swanson.html" }
+        ]
+      },
+      "Eat": {
+        "title": "State: Eating",
+        "explanation": "The agent holds the locks and works. The simulation waits for `time_to_eat`. This is the only state where the agent resets their `last_meal_time`, preventing starvation.",
+        "resources": []
+      },
+      "TimeUpdate": {
+        "title": "Atomic Time Update",
+        "explanation": "Updating `last_meal_time` allows the Monitor to know the agent is safe. This read/write operation happens in two different threads (Agent writes, Monitor reads), so it technically requires its own mutex (a 'data race' protection lock) to be thread-safe.",
+        "resources": [
+          { "label": "What is a Data Race?", "url": "https://stackoverflow.com/questions/34510/what-is-a-race-condition" }
+        ]
+      },
+      "Logger": {
+        "title": "Thread-Safe Logging",
+        "explanation": "When printing state changes (e.g., 'Agent 1 is eating'), you must lock a shared print mutex. Otherwise, if two agents print at the exact same time, the text on the console will be interleaved and unreadable.",
+        "resources": []
+      },
+      "StopFlag": {
+        "title": "Global Stop Flag",
+        "explanation": "A shared boolean/integer (protected by a mutex). When the Monitor sets this to 1, all Agent threads notice it in their next loop iteration and break/return, initiating shutdown.",
+        "resources": []
+      },
+      "Join": {
+        "title": "pthread_join",
+        "explanation": "The main thread waits here until all spawned threads have returned. This ensures that the program doesn't exit while threads are still running, which would cause leaks or crashes.",
+        "resources": [
+          { "label": "pthread_join logic", "url": "https://man7.org/linux/man-pages/man3/pthread_join.3.html" }
+        ]
+      },
+      "Destroy": {
+        "title": "Mutex Destroy",
+        "explanation": "Clean up kernel resources. Every initialized mutex must be destroyed using `pthread_mutex_destroy` before the program exits.",
+        "resources": []
+      }
+    }
+  },
 
   'fly-in': {
     projectId: 'fly-in',
