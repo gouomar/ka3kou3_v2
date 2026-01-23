@@ -21,140 +21,352 @@ export interface ProjectRoadmap {
 
 // Mock roadmap data for all projects
 export const projectRoadmaps: Record<string, ProjectRoadmap> = {
-  'libft': {
-    projectId: 'libft',
-    projectTitle: 'Libft',
-    overview: 'Build your first C library from scratch. This project introduces you to the fundamentals of C programming by reimplementing standard library functions. You\'ll learn memory management, string manipulation, and linked list operations while creating a library you\'ll use throughout your 42 journey.',
-    mermaidDiagram: `flowchart TD
-    subgraph Phase1 [PHASE 1: LIBC FUNCTIONS]
-        direction TB
-        start((START)) --> isalpha[1. ft_isalpha]
-        isalpha --> isdigit[2. ft_isdigit]
-        isdigit --> isalnum[3. ft_isalnum]
-        isalnum --> strlen[4. ft_strlen]
-        strlen --> memset[5. ft_memset]
-        memset --> memcpy[6. ft_memcpy]
-        memcpy --> strlcpy[7. ft_strlcpy]
-    end
-
-    subgraph Phase2 [PHASE 2: MEMORY FUNCTIONS]
-        direction TB
-        calloc[8. ft_calloc] --> strdup[9. ft_strdup]
-        strdup --> malloc_use[Memory Allocation]
-    end
-
-    subgraph Phase3 [PHASE 3: ADDITIONAL FUNCTIONS]
-        direction TB
-        substr[10. ft_substr] --> strjoin[11. ft_strjoin]
-        strjoin --> split[12. ft_split]
-        split --> itoa[13. ft_itoa]
-        itoa --> strmapi[14. ft_strmapi]
-    end
-
-    subgraph Phase4 [PHASE 4: BONUS - LINKED LISTS]
-        direction TB
-        lstnew[15. ft_lstnew] --> lstadd_front[16. ft_lstadd_front]
-        lstadd_front --> lstsize[17. ft_lstsize]
-        lstsize --> lstlast[18. ft_lstlast]
-        lstlast --> lstadd_back[19. ft_lstadd_back]
-        lstadd_back --> lstclear[20. ft_lstclear]
-    end
-
-    strlcpy --> calloc
-    malloc_use --> substr
-    strmapi --> lstnew
-    lstclear --> finish((COMPLETE))`,
-    nodes: {
-      'isalpha': {
-        title: 'ft_isalpha',
-        explanation: 'Check if a character is alphabetic (a-z, A-Z). This is your first function - understand ASCII values and how character comparison works in C.',
-        resources: [{ label: 'ASCII Table Reference', url: 'https://www.asciitable.com/' }]
+  "libft": {
+    "projectId": "libft",
+    "projectTitle": "Libft: The Essential C Library",
+    "overview": "Libft is the foundational project of the 42 curriculum. You will rebuild standard C library functions to master memory management, pointers, and algorithms. This library will serve as your personal toolkit for all future projects.",
+    "mermaidDiagram": "flowchart TD\n    Start((START)) --> Gen[General Requirements]\n\n    %% --- INFRASTRUCTURE (TOP WIDE) ---\n    subgraph Infra [0. INFRASTRUCTURE]\n        direction LR\n        Gen --> norm[The Norm]\n        norm --> makefile[Makefile]\n        makefile --> header[libft.h]\n        header --> static[Static Functions]\n        static --> ar[ar Command]\n    end\n\n    Infra --> Branch1\n    Infra --> Branch2\n    Infra --> Branch3\n\n    %% --- PART 1: LIBC (SPLIT INTO COLUMNS) ---\n    subgraph Part1 [PART 1: LIBC RE-IMPLEMENTATION]\n        direction TB\n        \n        %% Column 1: Simple Logic\n        subgraph Col1 [Char & Memory]\n            direction TB\n            isalpha[ft_isalpha] --> isdigit[ft_isdigit]\n            isdigit --> isalnum[ft_isalnum]\n            isalnum --> isascii[ft_isascii] --> isprint[ft_isprint]\n            memset[ft_memset] --> bzero[ft_bzero]\n            bzero --> memcpy[ft_memcpy] --> memmove[ft_memmove]\n        end\n\n        %% Column 2: Search & Compare\n        subgraph Col2 [Search & String Logic]\n            direction TB\n            strlen[ft_strlen] --> strchr[ft_strchr]\n            strchr --> strrchr[ft_strrchr]\n            strrchr --> strncmp[ft_strncmp]\n            memchr[ft_memchr] --> memcmp[ft_memcmp]\n            strlcpy[ft_strlcpy] --> strlcat[ft_strlcat]\n            strnstr[ft_strnstr] --> atoi[ft_atoi]\n        end\n        \n        %% Cross-column links\n        memmove -.-> Col2\n        isprint -.-> Col2\n    end\n\n    %% --- PART 2: ADDITIONAL (SPLIT INTO COLUMNS) ---\n    subgraph Part2 [PART 2: ADDITIONAL UTILITIES]\n        direction TB\n        \n        %% Column 3: Allocation & Mods\n        subgraph Col3 [Dynamic Memory & Strings]\n            direction TB\n            calloc[ft_calloc] --> strdup[ft_strdup]\n            substr[ft_substr] --> strjoin[ft_strjoin]\n            strjoin --> strtrim[ft_strtrim]\n            strtrim --> split[ft_split]\n        end\n\n        %% Column 4: Functional & IO\n        subgraph Col4 [Conversion & I/O]\n            direction TB\n            itoa[ft_itoa] --> strmapi[ft_strmapi]\n            strmapi --> striteri[ft_striteri]\n            putchar_fd[ft_putchar_fd] --> putstr_fd[ft_putstr_fd]\n            putstr_fd --> putendl_fd[ft_putendl_fd] --> putnbr_fd[ft_putnbr_fd]\n        end\n    end\n\n    %% --- PART 3: BONUS (WIDE BOTTOM) ---\n    subgraph Bonus [PART 3: LINKED LISTS]\n        direction LR\n        lstnew[ft_lstnew] --> lstadd_front[ft_lstadd_front]\n        lstadd_front --> lstsize[ft_lstsize]\n        lstsize --> lstlast[ft_lstlast]\n        lstlast --> lstadd_back[ft_lstadd_back]\n        lstadd_back --> lstdelone[ft_lstdelone]\n        lstdelone --> lstclear[ft_lstclear]\n        lstclear --> lstiter[ft_lstiter]\n        lstiter --> lstmap[ft_lstmap]\n    end\n\n    %% --- CONNECTIONS & FLOW ---\n    Branch1 --- Col1\n    Branch2 --- Col2\n    Branch3 --- Col3\n    Col3 --- Col4\n\n    %% Dependencies\n    strlen -.-> strlcpy\n    calloc -.-> lstnew\n    split -.-> lstmap\n    putnbr_fd --> Finish((COMPLETE))\n    lstmap --> Finish",
+    "nodes": {
+      "Gen": {
+        "title": "General Resources & Requirements",
+        "explanation": "Before coding, you must understand the project scope. Libft is about creating a 'Static Library' (.a). You are forbidden from using global variables and must manage all heap memory via malloc. Every function must be robust enough to handle unexpected inputs without crashing (except for undefined behavior specified in man pages).",
+        "resources": [
+          { "label": "C Standard Library Reference", "url": "https://en.cppreference.com/w/c/header" },
+          { "label": "Unix System Calls & Library Functions", "url": "https://man7.org/linux/man-pages/dir_section_3.html" }
+        ]
       },
-      'strlen': {
-        title: 'ft_strlen',
-        explanation: 'Calculate string length by iterating until null terminator. Foundation for all string operations.',
-        resources: [{ label: 'String Basics in C', url: 'https://www.tutorialspoint.com/cprogramming/c_strings.htm' }]
+      "norm": {
+        "title": "The Norm",
+        "explanation": "The Norm is the mandatory coding style at 42. Key rules: max 25 lines per function, max 5 functions per file, no 'for' loops (only 'while'), and very specific variable declaration formats. A single Norm error results in a project failure during automated grading.",
+        "resources": [{ "label": "Norminette GitHub", "url": "https://github.com/42School/norminette" }]
       },
-      'memset': {
-        title: 'ft_memset',
-        explanation: 'Fill memory with a constant byte. Learn pointer arithmetic and memory manipulation.',
-        resources: []
+      "makefile": {
+        "title": "Makefile & Relinking",
+        "explanation": "A Makefile automates compilation. Your Makefile must compile with -Wall -Wextra -Werror. 'Relinking' occurs when the Makefile re-compiles files that haven't changed; this is strictly forbidden in 42 projects. You must implement $(NAME), all, clean, fclean, and re rules.",
+        "resources": [{ "label": "Makefile Tutorial", "url": "https://makefiletutorial.com/" }, { "label": "GNU Make Manual", "url": "https://www.gnu.org/software/make/manual/make.html" }]
       },
-      'memcpy': {
-        title: 'ft_memcpy',
-        explanation: 'Copy memory area. Handle overlapping memory regions correctly.',
-        resources: [{ label: 'Memory Functions', url: 'https://www.cplusplus.com/reference/cstring/memcpy/' }]
+      "header": {
+        "title": "libft.h",
+        "explanation": "The header file defines the interface of your library. It must include the t_list struct definition for the bonus and all function prototypes. Header guards (#ifndef LIBFT_H...) are essential to prevent circular dependencies during compilation.",
+        "resources": [{ "label": "C Header Files", "url": "https://www.tutorialspoint.com/cprogramming/c_header_files.htm" }]
       },
-      'calloc': {
-        title: 'ft_calloc',
-        explanation: 'Allocate and zero-initialize memory. First encounter with malloc - always check for NULL returns.',
-        resources: [{ label: 'Dynamic Memory', url: 'https://www.learn-c.org/en/Dynamic_allocation' }]
+      "static": {
+        "title": "Static Functions",
+        "explanation": "Functions declared as 'static' are only visible within the file they are defined in. This is used for 'helper functions' to prevent naming collisions and to encapsulate logic that shouldn't be accessed by the user of the library.",
+        "resources": [{ "label": "Static Keywords in C", "url": "https://www.geeksforgeeks.org/static-variables-in-c/" }]
       },
-      'split': {
-        title: 'ft_split',
-        explanation: 'Split string by delimiter into array. Complex function requiring careful memory management and edge case handling.',
-        resources: []
+      "ar": {
+        "title": "ar & ranlib",
+        "explanation": "The 'ar' (archiver) command creates the libft.a static library. It bundles the object files (.o) together. 'ranlib' generates an index to the archive, which makes linking faster and helps the compiler find symbols.",
+        "resources": [{ "label": "Static Libraries in C", "url": "https://medium.com/@m_p_p/how-to-create-static-libraries-in-c-6e695d8f789e" }]
       },
-      'lstnew': {
-        title: 'ft_lstnew',
-        explanation: 'Create new linked list node. Introduction to data structures and pointer-based collections.',
-        resources: [{ label: 'Linked Lists', url: 'https://www.geeksforgeeks.org/data-structures/linked-list/' }]
+      "isalpha": {
+        "title": "ft_isalpha",
+        "explanation": "Checks if a character is a letter (A-Z or a-z). This is the basis for character parsing.",
+        "resources": [{ "label": "Man isalpha", "url": "https://linux.die.net/man/3/isalpha" }]
+      },
+      "isdigit": {
+        "title": "ft_isdigit",
+        "explanation": "Checks for a numeric digit (0-9). This is used in atoi and itoa for base-10 conversion.",
+        "resources": [{ "label": "Man isdigit", "url": "https://linux.die.net/man/3/isdigit" }]
+      },
+      "isalnum": {
+        "title": "ft_isalnum",
+        "explanation": "Combines isalpha and isdigit to check for any alphanumeric character.",
+        "resources": [{ "label": "Man isalnum", "url": "https://linux.die.net/man/3/isalnum" }]
+      },
+      "isascii": {
+        "title": "ft_isascii",
+        "explanation": "Checks if a character is part of the 7-bit ASCII set (values 0 to 127).",
+        "resources": [{ "label": "ASCII Table Reference", "url": "https://www.asciitable.com/" }]
+      },
+      "isprint": {
+        "title": "ft_isprint",
+        "explanation": "Checks if a character is printable (includes space, excludes control characters like \\n).",
+        "resources": [{ "label": "C isprint()", "url": "https://en.cppreference.com/w/c/string/byte/isprint" }]
+      },
+      "toupper": {
+        "title": "ft_toupper",
+        "explanation": "Converts a lowercase character to uppercase. If the character is not lowercase, it returns it unchanged.",
+        "resources": [{ "label": "Man toupper", "url": "https://linux.die.net/man/3/toupper" }]
+      },
+      "tolower": {
+        "title": "ft_tolower",
+        "explanation": "Converts an uppercase character to lowercase.",
+        "resources": [{ "label": "Man tolower", "url": "https://linux.die.net/man/3/tolower" }]
+      },
+      "memset": {
+        "title": "ft_memset",
+        "explanation": "Fills a block of memory with a specific constant byte. This is your introduction to pointer manipulation and the 'void *' type.",
+        "resources": [{ "label": "memset Manual", "url": "https://linux.die.net/man/3/memset" }]
+      },
+      "bzero": {
+        "title": "ft_bzero",
+        "explanation": "A legacy function that fills memory with zeros. Implementation usually calls ft_memset(s, 0, n).",
+        "resources": [{ "label": "bzero(3)", "url": "https://linux.die.net/man/3/bzero" }]
+      },
+      "memcpy": {
+        "title": "ft_memcpy",
+        "explanation": "Copies 'n' bytes from one memory area to another. Warning: It does not handle overlapping memory. Use memmove for that.",
+        "resources": [{ "label": "Man memcpy", "url": "https://linux.die.net/man/3/memcpy" }]
+      },
+      "memmove": {
+        "title": "ft_memmove",
+        "explanation": "Copies memory while safely handling overlaps. If the destination is after the source in memory, you must copy from the end to the beginning to avoid data corruption.",
+        "resources": [{ "label": "Overlap Logic Explanation", "url": "https://stackoverflow.com/questions/4415910/memcpy-vs-memmove" }]
+      },
+      "strlen": {
+        "title": "ft_strlen",
+        "explanation": "Computes the length of a string. Crucial: strings in C are null-terminated (\\0). You must iterate until this terminator is found.",
+        "resources": [{ "label": "Man strlen", "url": "https://linux.die.net/man/3/strlen" }]
+      },
+      "strchr": {
+        "title": "ft_strchr",
+        "explanation": "Locates the first occurrence of a character in a string. It returns a pointer to that location.",
+        "resources": [{ "label": "Man strchr", "url": "https://linux.die.net/man/3/strchr" }]
+      },
+      "strrchr": {
+        "title": "ft_strrchr",
+        "explanation": "Locates the LAST occurrence of a character in a string. Useful for finding file extensions.",
+        "resources": [{ "label": "C strrchr", "url": "https://www.tutorialspoint.com/c_standard_library/c_function_strrchr.htm" }]
+      },
+      "strncmp": {
+        "title": "ft_strncmp",
+        "explanation": "Compares two strings up to 'n' characters. It returns the ASCII difference of the first differing characters.",
+        "resources": [{ "label": "Man strncmp", "url": "https://linux.die.net/man/3/strncmp" }]
+      },
+      "memchr": {
+        "title": "ft_memchr",
+        "explanation": "Searches memory for a byte. Similar to strchr but it does not stop at null bytes.",
+        "resources": [{ "label": "Man memchr", "url": "https://linux.die.net/man/3/memchr" }]
+      },
+      "memcmp": {
+        "title": "ft_memcmp",
+        "explanation": "Compares two memory blocks byte by byte. Essential for comparing non-string data.",
+        "resources": [{ "label": "Man memcmp", "url": "https://linux.die.net/man/3/memcmp" }]
+      },
+      "strnstr": {
+        "title": "ft_strnstr",
+        "explanation": "Locates a substring in a string within a search limit. This is a BSD function, often not found in standard Linux libc.",
+        "resources": [{ "label": "FreeBSD strnstr Manual", "url": "https://www.freebsd.org/cgi/man.cgi?query=strnstr" }]
+      },
+      "strlcpy": {
+        "title": "ft_strlcpy",
+        "explanation": "Copies a string to a buffer, ensuring it is always null-terminated. This is much safer than the standard 'strncpy'.",
+        "resources": [{ "label": "Safe String Copying", "url": "https://linux.die.net/man/3/strlcpy" }]
+      },
+      "strlcat": {
+        "title": "ft_strlcat",
+        "explanation": "Appends a string to another with a size limit, ensuring null-termination. It returns the total length of the string it tried to create.",
+        "resources": [{ "label": "strlcat logic", "url": "https://linux.die.net/man/3/strlcat" }]
+      },
+      "atoi": {
+        "title": "ft_atoi",
+        "explanation": "Converts a string (like ' -123') into an integer (-123). You must skip whitespace and handle the sign correctly.",
+        "resources": [{ "label": "Man atoi", "url": "https://linux.die.net/man/3/atoi" }, { "label": "How atoi works", "url": "https://www.geeksforgeeks.org/write-your-own-atoi/" }]
+      },
+      "calloc": {
+        "title": "ft_calloc",
+        "explanation": "Allocates memory and clears it to zero. This is a combination of malloc and bzero. Essential for preventing 'garbage' data in your structures.",
+        "resources": [{ "label": "Dynamic Memory Allocation", "url": "https://www.geeksforgeeks.org/calloc-versus-malloc/" }]
+      },
+      "strdup": {
+        "title": "ft_strdup",
+        "explanation": "Duplicates a string by allocating exact memory with malloc. You are responsible for freeing this memory later.",
+        "resources": [{ "label": "Man strdup", "url": "https://linux.die.net/man/3/strdup" }]
+      },
+      "substr": {
+        "title": "ft_substr",
+        "explanation": "Extracts a portion of a string into a new allocation. This requires careful boundary checking for the 'start' and 'len' parameters.",
+        "resources": [{ "label": "Substring logic in C", "url": "https://stackoverflow.com/questions/26620388/c-substring-function" }]
+      },
+      "strjoin": {
+        "title": "ft_strjoin",
+        "explanation": "Combines two strings into one new allocated string. You must calculate the lengths of both to malloc the correct size.",
+        "resources": [{ "label": "Dynamic Concatenation", "url": "https://en.wikipedia.org/wiki/Concatenation" }]
+      },
+      "strtrim": {
+        "title": "ft_strtrim",
+        "explanation": "Removes specific characters (like whitespace) from both the start and end of a string. Does not modify the original string.",
+        "resources": [{ "label": "String Trimming Concept", "url": "https://en.wikipedia.org/wiki/Trimming_(computer_programming)" }]
+      },
+      "split": {
+        "title": "ft_split",
+        "explanation": "Splits a string into an array of strings based on a delimiter. This is the hardest mandatory function. If one allocation fails halfway through, you must free all previous strings to prevent memory leaks.",
+        "resources": [{ "label": "Protecting Malloc in Loops", "url": "https://pvs-studio.com/en/blog/posts/cpp/0754/" }]
+      },
+      "itoa": {
+        "title": "ft_itoa",
+        "explanation": "Converts an integer to a string (e.g., -42 to '-42'). You must calculate the number of digits first and handle INT_MIN (-2147483648) as a special case.",
+        "resources": [{ "label": "Integer to ASCII Logic", "url": "https://en.wikipedia.org/wiki/Itoa" }]
+      },
+      "strmapi": {
+        "title": "ft_strmapi",
+        "explanation": "Applies a function to each character of a string to create a NEW string. This uses 'Function Pointers'.",
+        "resources": [{ "label": "C Function Pointers", "url": "https://www.geeksforgeeks.org/function-pointer-in-c/" }]
+      },
+      "striteri": {
+        "title": "ft_striteri",
+        "explanation": "Similar to strmapi, but it modifies the string in-place (no new allocation).",
+        "resources": [{ "label": "In-place Modification", "url": "https://www.tutorialspoint.com/cprogramming/c_pointers.htm" }]
+      },
+      "putchar_fd": {
+        "title": "ft_putchar_fd",
+        "explanation": "Outputs a character to a specific File Descriptor (FD). 1 is standard output, 2 is error output.",
+        "resources": [{ "label": "Unix File Descriptors", "url": "https://en.wikipedia.org/wiki/File_descriptor" }]
+      },
+      "putstr_fd": {
+        "title": "ft_putstr_fd",
+        "explanation": "Outputs a string to a file descriptor using the write() system call.",
+        "resources": [{ "label": "Write System Call", "url": "https://man7.org/linux/man-pages/man2/write.2.html" }]
+      },
+      "putendl_fd": {
+        "title": "ft_putendl_fd",
+        "explanation": "Outputs a string followed by a newline (\\n) to a file descriptor.",
+        "resources": [{ "label": "Standard I/O", "url": "https://en.cppreference.com/w/c/io" }]
+      },
+      "putnbr_fd": {
+        "title": "ft_putnbr_fd",
+        "explanation": "Outputs an integer to a file descriptor. Usually implemented using recursion to handle multi-digit numbers.",
+        "resources": [{ "label": "Recursive Print Number", "url": "https://www.geeksforgeeks.org/print-an-integer-using-recursion/" }]
+      },
+      "lstnew": {
+        "title": "ft_lstnew",
+        "explanation": "Creates a new node for a Linked List. The data is stored as a 'void *' so it can hold any type of content.",
+        "resources": [{ "label": "Linked List Introduction", "url": "https://www.geeksforgeeks.org/data-structures/linked-list/" }]
+      },
+      "lstadd_front": {
+        "title": "ft_lstadd_front",
+        "explanation": "Adds a new node to the start of a list. Requires a 'pointer to a pointer' (**lst) so you can modify the head of the list.",
+        "resources": [{ "label": "Pointers to Pointers", "url": "https://www.tutorialspoint.com/cprogramming/c_pointer_to_pointer.htm" }]
+      },
+      "lstsize": {
+        "title": "ft_lstsize",
+        "explanation": "Counts the number of elements in a linked list by traversing it.",
+        "resources": [{ "label": "Traversal of Linked Lists", "url": "https://www.geeksforgeeks.org/linked-list-set-2-inserting-a-node/" }]
+      },
+      "lstlast": {
+        "title": "ft_lstlast",
+        "explanation": "Returns a pointer to the last node in the list.",
+        "resources": [{ "label": "Finding the tail node", "url": "https://en.wikipedia.org/wiki/Linked_list" }]
+      },
+      "lstadd_back": {
+        "title": "ft_lstadd_back",
+        "explanation": "Appends a new node to the end of the list. Handles the case where the list is empty.",
+        "resources": [{ "label": "Adding nodes to the end", "url": "https://www.tutorialspoint.com/data_structures_algorithms/linked_list_algorithms.htm" }]
+      },
+      "lstdelone": {
+        "title": "ft_lstdelone",
+        "explanation": "Frees a single node. It uses a custom 'del' function to free the content, then frees the node itself.",
+        "resources": [{ "label": "Deleting a node", "url": "https://www.geeksforgeeks.org/linked-list-set-3-deleting-node/" }]
+      },
+      "lstclear": {
+        "title": "ft_lstclear",
+        "explanation": "Clears the entire list from a specific node onwards, ensuring all memory is freed and the head is set to NULL.",
+        "resources": [{ "label": "Freeing Linked List Memory", "url": "https://stackoverflow.com/questions/7023030/how-to-free-memory-in-a-linked-list" }]
+      },
+      "lstiter": {
+        "title": "ft_lstiter",
+        "explanation": "Iterates through the list and applies a function 'f' to the content of every node.",
+        "resources": [{ "label": "Higher Order Functions", "url": "https://en.wikipedia.org/wiki/Higher-order_function" }]
+      },
+      "lstmap": {
+        "title": "ft_lstmap",
+        "explanation": "The most complex bonus function. It creates a NEW list based on the result of a function applied to the old list. Requires perfect error handling.",
+        "resources": [{ "label": "Functional Map in C", "url": "https://en.wikipedia.org/wiki/Map_(higher-order_function)" }]
       }
     }
   },
 
-  'ft_printf': {
-    projectId: 'ft_printf',
-    projectTitle: 'ft_printf',
-    overview: 'Recreate the printf function, one of C\'s most versatile functions. You\'ll master variadic functions, format parsing, and learn how to handle multiple data types with a single function signature. This project teaches you about function design and code architecture.',
-    mermaidDiagram: `flowchart TD
-    subgraph Init [PHASE 1: SETUP]
-        direction TB
-        start((START)) --> parse[1. Parse Format String]
-        parse --> variadic[2. Variadic Arguments]
-        variadic --> dispatch[3. Format Dispatcher]
-    end
-
-    subgraph Conversions [PHASE 2: CONVERSIONS]
-        direction TB
-        dispatch --> conv{Conversion?}
-        conv -- %c --> char_conv[4. Character]
-        conv -- %s --> str_conv[5. String]
-        conv -- %d/%i --> int_conv[6. Integer]
-        conv -- %u --> uint_conv[7. Unsigned]
-        conv -- %x/%X --> hex_conv[8. Hexadecimal]
-        conv -- %p --> ptr_conv[9. Pointer]
-        conv -- %% --> percent[10. Percent Sign]
-    end
-
-    subgraph Output [PHASE 3: OUTPUT]
-        direction TB
-        char_conv --> write_out[11. Write Output]
-        str_conv --> write_out
-        int_conv --> write_out
-        uint_conv --> write_out
-        hex_conv --> write_out
-        ptr_conv --> write_out
-        percent --> write_out
-        write_out --> count[12. Count Characters]
-    end
-
-    count --> finish((RETURN COUNT))`,
-    nodes: {
-      'variadic': {
-        title: 'Variadic Arguments',
-        explanation: 'Use va_start, va_arg, va_end macros to handle variable number of arguments. The core mechanism that makes printf flexible.',
-        resources: [{ label: 'Variadic Functions', url: 'https://en.cppreference.com/w/c/variadic' }]
+  "ft_printf": {
+    "projectId": "ft_printf",
+    "projectTitle": "ft_printf: The Variadic Challenge",
+    "overview": "In this project, you will rebuild the famous C library function printf. You will master Variadic Functions, design an extensible dispatch system for different data types, and implement low-level number conversion algorithms. This project teaches you to manage the stack manually, understand type promotion, and write robust, buffer-free output logic.",
+    "mermaidDiagram": "flowchart TD\n    Start((START)) --> Prereq[0. PREREQUISITES]\n\n    subgraph Infra [1. VARIADIC INFRASTRUCTURE]\n        direction TB\n        Prereq --> stdarg[\"<stdarg.h> Concepts\"]\n        stdarg --> Init[Function Signature]\n        Init --> va_macros[va_start, va_arg, va_end]\n    end\n\n    Infra --> Handlers\n\n    subgraph Handlers [2. FORMAT SPECIFIERS]\n        direction TB\n        \n        subgraph TextGroup [Text Operations]\n            Handle_C[%c: Character]\n            Handle_S[%s: String]\n            Handle_Pct[%%: Literal]\n        end\n\n        subgraph NumGroup [Decimal Operations]\n            Handle_Int[%d / %i: Signed Integer]\n            Handle_UInt[%u: Unsigned Integer]\n        end\n\n        subgraph HexGroup [Hexadecimal Operations]\n            Handle_Hex[%x / %X: Hexadecimal]\n            Handle_Ptr[%p: Memory Address]\n        end\n    end\n\n    Handlers --> Algos\n\n    subgraph Algos [3. CORE ALGORITHMS]\n        direction TB\n        Recursion[Recursive Digit Printing]\n        Base16[Base 16 Conversion Logic]\n    end\n\n    %% Conceptual Dependencies\n    va_macros -.-> Handlers\n    Handle_Int -.-> Recursion\n    Handle_UInt -.-> Recursion\n    Handle_Hex -.-> Base16\n    Handle_Ptr -.-> Base16\n    Base16 -.-> Recursion\n    \n    Base16 --> Finish((COMPLETE))",
+    "nodes": {
+      "Prereq": {
+        "title": "Prerequisites & Constraints",
+        "explanation": "Before writing code, you must understand the strict constraints. You are not allowed to use the standard C library buffer system (`FILE *`, `printf`, `sprintf`). Instead, you must rely entirely on the unbuffered `write(2)` system call. You also need to understand File Descriptors, specifically that `1` represents `stdout` (Standard Output). This means every character you process must be manually sent to the kernel for display, and you must track every single byte written to return the correct count.",
+        "resources": [
+          { "label": "Write System Call Man Page", "url": "https://man7.org/linux/man-pages/man2/write.2.html" },
+          { "label": "File Descriptors Explained", "url": "https://en.wikipedia.org/wiki/File_descriptor" }
+        ]
       },
-      'dispatch': {
-        title: 'Format Dispatcher',
-        explanation: 'Parse format specifiers and route to appropriate conversion function. Design pattern for handling multiple cases.',
-        resources: []
+      "stdarg": {
+        "title": "Variadic Concepts",
+        "explanation": "Variadic functions are functions that can accept an indefinite number of arguments (like `printf`). In C, arguments are pushed onto the stack. A variadic function knows where the fixed arguments end, but it doesn't inherently know how many extra arguments follow or what their types are. The `<stdarg.h>` library provides the mechanisms to manually traverse the stack memory to retrieve these values. Understanding this 'stack walking' is key to debugging segmentation faults in this project.",
+        "resources": [
+          { "label": "Variadic Functions in C", "url": "https://www.geeksforgeeks.org/variadic-functions-in-c/" }
+        ]
       },
-      'hex_conv': {
-        title: 'Hexadecimal Conversion',
-        explanation: 'Convert integers to base-16 representation. Understand number bases and recursive/iterative digit extraction.',
-        resources: [{ label: 'Number Bases', url: 'https://www.mathsisfun.com/hexadecimals.html' }]
+      "Init": {
+        "title": "Function Signature & Return Value",
+        "explanation": "The prototype `int ft_printf(const char *format, ...)` tells the compiler to expect a format string and 'any number of other things'. The return value is critical: `ft_printf` must return the total number of characters successfully written to stdout. You must maintain a counter throughout your entire program, incrementing it with every `write` call. If a write error occurs (rare, but possible), the standard behavior is to return -1.",
+        "resources": [
+          { "label": "Printf Manual", "url": "https://linux.die.net/man/3/printf" }
+        ]
+      },
+      "va_macros": {
+        "title": "va_start, va_arg, va_end",
+        "explanation": "These macros manipulate the stack pointer. `va_start` initializes a pointer (`va_list`) to the location in memory right after your last fixed argument (`format`). `va_arg` does two things: it retrieves the data at the current pointer location casting it to the type you specify (e.g., `int`), and then advances the pointer to the next argument. `va_end` is used to clean up; while often a no-op on modern Intel CPUs, it is required for portability and proper stack frame restoration on other architectures.",
+        "resources": [
+          { "label": "Man stdarg(3)", "url": "https://linux.die.net/man/3/stdarg" }
+        ]
+      },
+      "Handle_C": {
+        "title": "%c (Character)",
+        "explanation": "This handles printing a single character. A crucial concept here is 'Default Argument Promotion'. When passing a `char` to a variadic function, C automatically promotes it to an `int` to align with the CPU's word size. Therefore, you must use `va_arg(args, int)` to retrieve it, and then cast it back to `(unsigned char)` before passing it to `write`. Failing to do this can lead to reading garbage data.",
+        "resources": [
+          { "label": "Default Argument Promotions", "url": "https://stackoverflow.com/questions/28054194/char-argument-promotion-in-variadic-functions" }
+        ]
+      },
+      "Handle_S": {
+        "title": "%s (String)",
+        "explanation": "This handles printing a string (char pointer). The primary complexity is safety. In standard C, passing a NULL pointer to `%s` is undefined behavior, but in robust implementations (like `ft_printf`), you are expected to detect NULL and print `(null)` instead of crashing. You must iterate through the string, writing one byte at a time (or using `strlen` and `write`) and adding the length to your total return count.",
+        "resources": []
+      },
+      "Handle_Pct": {
+        "title": "%% (Percent Literal)",
+        "explanation": "Since `%` acts as the 'escape character' that triggers formatting, we need a way to print the actual percent symbol. The sequence `%%` is used for this. This handler consumes *no* arguments from the `va_list`; it simply writes a `%` to stdout and continues parsing the format string.",
+        "resources": []
+      },
+      "Handle_Int": {
+        "title": "%d / %i (Signed Integer)",
+        "explanation": "This handles signed decimal integers. The most difficult edge case is `INT_MIN` (-2147483648). If you try to simply negate this number (`n = -n`) to print it as positive, it will overflow because `2147483648` cannot fit in a signed 32-bit integer (max is `2147483647`). You must handle this case specifically (hardcoding the string or using unsigned casting) to avoid logic errors.",
+        "resources": [
+          { "label": "Integer Limits & Two's Complement", "url": "https://en.wikipedia.org/wiki/2,147,483,647#In_computing" }
+        ]
+      },
+      "Handle_UInt": {
+        "title": "%u (Unsigned Integer)",
+        "explanation": "This handles unsigned integers. Unlike `%d`, this specifier interprets the 32 bits of the integer purely as magnitude, with no sign bit. This allows it to represent numbers up to roughly 4.29 billion. Your printing logic must ensure it does not check for negative signs, as `(unsigned int)-1` is actually a very large positive number.",
+        "resources": []
+      },
+      "Handle_Hex": {
+        "title": "%x / %X (Hexadecimal)",
+        "explanation": "This converts an integer into Base 16. In Base 16, we use digits 0-9 and letters a-f. The logic involves modulo 16 (`% 16`) to find the current digit and division by 16 (`/ 16`) to move to the next. `%x` implies using the lowercase set `abcdef`, while `%X` uses `ABCDEF`. This is typically solved by passing the specific 'base string' (e.g., \"0123456789abcdef\") to your recursive printing function.",
+        "resources": [
+          { "label": "Hexadecimal System", "url": "https://www.mathsisfun.com/hexadecimals.html" }
+        ]
+      },
+      "Handle_Ptr": {
+        "title": "%p (Pointer Address)",
+        "explanation": "This prints the memory address a pointer holds. In hardware, a pointer is just a number (usually `unsigned long` or `uintptr_t`). You must cast the `void *` argument to a `uintptr_t` to ensure it holds the full address size (64-bit on modern machines). The standard format prefixes the output with `0x` followed by the hexadecimal value. Special care must be taken for NULL pointers, which often print as `(nil)` on Linux or `0x0` on Mac.",
+        "resources": [
+          { "label": "Pointers and Memory Addresses", "url": "https://www.tutorialspoint.com/cprogramming/c_pointers.htm" }
+        ]
+      },
+      "Recursion": {
+        "title": "Recursive Digit Printing",
+        "explanation": "Since standard `write` only prints characters, you cannot print a number directly. You must convert it to digits. Recursion is the most elegant way to do this without a buffer. The logic is: 'If the number is > 9, call self with (number / 10)'. This effectively pushes all digits onto the stack. When the recursion unwinds, you print `number % 10`. This ensures the digits appear in the correct order (Left-to-Right) even though you process them Right-to-Left mathematically.",
+        "resources": [
+          { "label": "Recursive Printing Logic", "url": "https://www.geeksforgeeks.org/recursive-program-to-print-an-integer/" }
+        ]
+      },
+      "Base16": {
+        "title": "Base 16 Conversion Logic",
+        "explanation": "This is a variation of the recursive printing algorithm. Instead of dividing/modulating by 10, you use 16. The critical addition is mapping the remainder to the correct character. If the remainder is between 0-9, you print the ASCII digit. If it is between 10-15, you must calculate the offset to print 'a' through 'f' (e.g., `remainder - 10 + 'a'`).",
+        "resources": []
       }
     }
   },
